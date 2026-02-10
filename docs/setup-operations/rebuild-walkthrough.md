@@ -2,7 +2,7 @@
 
 Use this when you're stuck or want a full rebuild. Two paths: **auto script** or **manual via SSH**.
 
-**Pi:** `towerhill.local` / `192.168.1.160`  
+**Pi:** your host (e.g. `your-pi.local` or your Pi IP)  
 **Paths on Pi:** `~/deployment/backend`, `~/deployment/dashboard` (nginx serves the latter)
 
 ---
@@ -12,7 +12,7 @@ Use this when you're stuck or want a full rebuild. Two paths: **auto script** or
 From your **Mac**, in the project root:
 
 ```bash
-cd "/Users/mbarilla/Library/Mobile Documents/com~apple~CloudDocs/Projects/Tempest"
+cd /path/to/tempest-dashboard
 ./scripts/auto-build-and-deploy.sh network
 ```
 
@@ -48,7 +48,7 @@ Do this if the script fails or you want to run each step yourself.
 **1. Build and create the tarball**
 
 ```bash
-cd "/Users/mbarilla/Library/Mobile Documents/com~apple~CloudDocs/Projects/Tempest"
+cd /path/to/tempest-dashboard
 ./scripts/auto-build-and-deploy.sh build-only
 ```
 
@@ -57,14 +57,14 @@ Tarball: `build-output/tempest-v*-*.tar.gz`
 **2. Transfer to Pi**
 
 ```bash
-scp build-output/tempest-v*.tar.gz mbarilla@towerhill.local:~/
-# or: scp build-output/tempest-v*.tar.gz mbarilla@192.168.1.160:~/
+scp build-output/tempest-v*.tar.gz user@your-pi.local:~/
+# or: scp build-output/tempest-v*.tar.gz user@<your-pi-ip>:~/
 ```
 
 ### On the Pi (SSH)
 
 ```bash
-ssh mbarilla@towerhill.local
+ssh user@your-pi.local
 ```
 
 **3. Backup existing deployment and .env (optional but safe)**
@@ -131,14 +131,14 @@ nginx serves `~/deployment/dashboard`; the extract in step 4 already updated tho
 
 ```bash
 # from Mac
-ssh mbarilla@towerhill.local "pm2 status"
-ssh mbarilla@towerhill.local "pm2 logs tempest-backend --lines 20"
+ssh user@your-pi.local "pm2 status"
+ssh user@your-pi.local "pm2 logs tempest-backend --lines 20"
 
 # API
-curl http://towerhill.local:3001/api/weather/current
+curl http://your-pi.local:3001/api/weather/current
 
 # Dashboard (through nginx)
-curl -s -o /dev/null -w "%{http_code}" http://towerhill.local/
+curl -s -o /dev/null -w "%{http_code}" http://your-pi.local/
 # expect 200
 ```
 
@@ -148,8 +148,8 @@ curl -s -o /dev/null -w "%{http_code}" http://towerhill.local/
 
 - **502 / API down:** `pm2 status` and `pm2 logs tempest-backend`; ensure `~/deployment/backend/.env` has a valid `TEMPEST_API_TOKEN` and `TEMPEST_STATION_ID`.
 - **Old dashboard / wrong files:**  
-  - nginx should use `root /home/mbarilla/deployment/dashboard;`  
-  - Check: `ssh mbarilla@towerhill.local "grep root /etc/nginx/sites-available/tempest"`  
+  - nginx should use `root /home/<your-user>/deployment/dashboard;`  
+  - Check: `ssh user@your-pi.local "grep root /etc/nginx/sites-available/tempest"`  
   - If it points to `/var/www/html`, fix nginx to use `~/deployment/dashboard` and `sudo systemctl reload nginx`.
 - **.env lost:**  
   - Restore from `~/deployment-backup-.env` if you made that copy, or  
@@ -162,10 +162,10 @@ curl -s -o /dev/null -w "%{http_code}" http://towerhill.local/
 Assumes you already ran `build-only` and have `build-output/tempest-v*.tar.gz`:
 
 ```bash
-cd "/Users/mbarilla/Library/Mobile Documents/com~apple~CloudDocs/Projects/Tempest" && \
+cd /path/to/tempest-dashboard && \
 F="$(ls build-output/tempest-v*.tar.gz 2>/dev/null | head -1)" && \
-[ -n "$F" ] && scp "$F" mbarilla@towerhill.local:~/ && \
-ssh mbarilla@towerhill.local "cd ~ && tar -xzf tempest-v*.tar.gz && cd deployment/backend && npm install --production && pm2 restart tempest-backend && pm2 save"
+[ -n "$F" ] && scp "$F" user@your-pi.local:~/ && \
+ssh user@your-pi.local "cd ~ && tar -xzf tempest-v*.tar.gz && cd deployment/backend && npm install --production && pm2 restart tempest-backend && pm2 save"
 ```
 
-Then, if needed: `ssh mbarilla@towerhill.local "sudo systemctl reload nginx"`
+Then, if needed: `ssh user@your-pi.local "sudo systemctl reload nginx"`

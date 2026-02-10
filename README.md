@@ -2,20 +2,26 @@
 
 A modern, beautiful weather dashboard for Raspberry Pi, powered by the Tempest Weather API.
 
-![Version](https://img.shields.io/badge/version-1.4.3-blue)
+![Version](https://img.shields.io/badge/version-1.4.11-blue)
 ![Node](https://img.shields.io/badge/node-20.x-green)
 ![License](https://img.shields.io/badge/license-MIT-blue)
-![Deploy](https://img.shields.io/badge/deploy-towerhill.local-brightgreen)
+![Deploy](https://img.shields.io/badge/deploy-Raspberry%20Pi-brightgreen)
+
+**Live example:** [towerhill.app](https://towerhill.app)
 
 ## Features
 
-- **Beautiful Design**: Boutique weather app aesthetics with golden vertical alignment system
-- **Real-time Data**: Live weather updates from your Tempest station
-- **Historical Trends**: 6-hour sparklines for pressure, humidity, wind, and precipitation
-- **Manual Logging**: Log precipitation manually and make condition corrections
-- **Dark/Light Mode**: Automatic theme switching based on time of day
-- **Optimized for Pi**: Runs perfectly on Raspberry Pi 4 in kiosk mode
-- **WCAG AA Compliant**: 21:1 contrast ratio for accessibility
+- **Beautiful Design** — Boutique weather app aesthetics with golden vertical alignment, design tokens (radius, opacity, colors), and consistent 48px gutters (32px tablet, 24px mobile)
+- **Real-time Weather** — Current conditions with feels-like temperature; hourly and 10-day forecast; condition corrections (override observed conditions, persists 30 minutes)
+- **Historical Trends** — 6-hour sparklines for pressure, humidity, wind, and precipitation; 3-day and 7-day metric charts; analytics view with time-range selector
+- **Metrics Dashboard** — Barometric pressure, humidity with dew point, wind speed and gusts, precipitation tracking, solar radiation, sunrise/sunset; tappable cards with metric detail modals
+- **Manual Precipitation Logging** — Log snow, rain, sleet, hail with amounts; view and edit history; graph and time-range views
+- **NWS Integration** — U.S. National Weather Service alerts and storm warnings with detail modal
+- **Optional LLM “Atmosphere”** — Short natural-language summary of conditions (via optional weather bridge service); thumbs up/down feedback
+- **Dark/Light Mode** — Automatic theme switching based on time of day (sunrise/sunset); manual theme toggle
+- **Optimized for Pi** — Runs on Raspberry Pi 4 in kiosk mode; Chromium-friendly; swap and GPU tuning documented
+- **Accessibility** — WCAG AA/AAA contrast (21:1); 2px stroke icons; staggered entrance animations
+- **Optional Google Home** — “Hey Google, ask Tempest what’s the weather” via Dialogflow webhook
 
 ## Quick Start
 
@@ -67,7 +73,7 @@ npm start
 
 ### Production Instance
 
-The Tempest dashboard is deployed at **http://towerhill.local** on a Raspberry Pi 4.
+Example: the dashboard can be deployed on a Raspberry Pi 4 (e.g. at `http://your-host.local` or your Pi’s IP).
 
 **Critical Stability Fixes Applied**:
 - ✅ Swap increased to 1024MB (prevents OOM freezes)
@@ -80,7 +86,7 @@ The Tempest dashboard is deployed at **http://towerhill.local** on a Raspberry P
 The automated script handles everything including rebuilding native modules on the Pi:
 
 ```bash
-# Network deployment to towerhill.local (recommended)
+# Network deployment (set TEMPEST_PI_IP and TEMPEST_PI_USER, or enter when prompted)
 ./scripts/auto-build-and-deploy.sh network
 
 # USB deployment (for offline Pi)
@@ -101,8 +107,8 @@ The automated script handles everything including rebuilding native modules on t
 # Build and package (creates build-output/build-YYYYMMDD-HHMMSS/ or use TEMPEST_BUILD_DIR)
 ./scripts/auto-build-and-deploy.sh build-only
 
-# Transfer to Pi (use the tarball from the build output dir)
-scp build-output/build-*/tempest-v*.tar.gz mbarilla@192.168.1.160:~/
+# Transfer to Pi (use the tarball from the build output dir; replace user@host with your Pi SSH)
+scp build-output/build-*/tempest-v*.tar.gz user@your-pi.local:~/
 
 # On the Pi (extract in home directory to get ~/deployment)
 tar -xzf tempest-v*.tar.gz
@@ -210,7 +216,7 @@ rm -f ~/tempest-v*.tar.gz                 # Clean old deployments
 # Hard refresh browser (Cmd+Shift+R)
 # Or verify nginx path:
 sudo cat /etc/nginx/sites-available/tempest | grep "root"
-# Should show: root /home/mbarilla/deployment/dashboard;
+# Should show: root /home/<your-user>/deployment/dashboard;
 ```
 
 ### Backend not responding
@@ -225,11 +231,8 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for complete troubleshooting guide.
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
 
-### Latest: v1.4.3 (2026-01-27)
-- **Local News Headlines Carousel**: Hyper-local news from Wayland Post and Weston Observer with intelligent prioritization and filtering
-- **Opt-in News**: News is disabled by default everywhere. Enable with `?news=1` URL parameter on any version (towerhill.app or towerhill.local)
-- **Enhanced Image Extraction**: Multiple image sources with article page scraping fallback
-- **Improved Card Layout**: Full headlines with right-aligned thumbnails, bottom-aligned timestamps, subtle hover effects
+### Latest: v1.4.11
+- Tappable metric cards with detail modals; 3-day and 7-day charts; design tokens; conditions list view. See [CHANGELOG.md](CHANGELOG.md) for full history.
 
 ## Resources
 

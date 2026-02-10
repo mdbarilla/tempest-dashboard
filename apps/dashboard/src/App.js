@@ -6,7 +6,6 @@ import { isLocalAccess } from './utils/access';
 import CurrentWeather from './components/CurrentWeather';
 import Forecast from './components/Forecast';
 import Metrics from './components/Metrics';
-import NewsCarousel from './components/NewsCarousel';
 import ConditionsList from './pages/ConditionsList';
 import MetricDetailView from './pages/MetricDetailView';
 import './styles/App.css';
@@ -77,9 +76,6 @@ function App() {
   const [isUsingCachedData, setIsUsingCachedData] = useState(false);
   const [themeOverride, setThemeOverride] = useState(() => localStorage.getItem('themeOverride') || null); // null, 'light', 'dark'
   const [lastFetchError, setLastFetchError] = useState(null); // { message, code, url } for dev debugging
-  const [newsData, setNewsData] = useState(null);
-  const [newsLoading, setNewsLoading] = useState(false);
-  const [newsError, setNewsError] = useState(null);
   const isLocal = isLocalAccess();
 
   const refreshAtmosphere = useCallback(async () => {
@@ -91,49 +87,6 @@ function App() {
       }
     } catch (e) {
       console.error('Refresh atmosphere failed', e);
-    }
-  }, []);
-
-  const fetchNews = useCallback(async () => {
-    // News disabled by default everywhere. Enable with ?news=1.
-    const params = new URLSearchParams(window.location.search);
-    const newsParam = params.get('news');
-    const showNews = newsParam === '1';
-
-    if (!showNews) {
-      setNewsData(null);
-      setNewsLoading(false);
-      setNewsError(null);
-      return;
-    }
-
-    setNewsLoading(true);
-    setNewsError(null);
-    
-    try {
-      const response = await axios.get(`${API_BASE_URL}/news`, { timeout: 15000 });
-      if (response.data?.success) {
-        setNewsData(response.data.data || []);
-        setNewsError(null);
-      } else {
-        const errorMsg = response.data?.error || 'Failed to fetch news';
-        setNewsError(errorMsg);
-        setNewsData(null);
-        console.error('News fetch failed:', errorMsg);
-      }
-    } catch (err) {
-      console.error('Error fetching news:', err);
-      let errorMsg = err.response?.data?.error || err.message || 'Network error';
-      
-      // Check if it's a 503 service unavailable (missing dependencies)
-      if (err.response?.status === 503) {
-        errorMsg = 'News service unavailable. Backend dependencies need to be installed.';
-      }
-      
-      setNewsError(errorMsg);
-      setNewsData(null);
-    } finally {
-      setNewsLoading(false);
     }
   }, []);
 
@@ -347,47 +300,6 @@ function App() {
     return () => clearInterval(staleCheckInterval);
   }, [lastUpdate, connectionStatus]);
 
-  // Fetch news when component mounts or URL changes (?news=1 only)
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const showNews = params.get('news') === '1';
-
-    if (showNews) {
-      fetchNews();
-      
-      // Refresh news every 10 minutes
-      const refreshInterval = setInterval(() => {
-        fetchNews();
-      }, 10 * 60 * 1000);
-      
-      return () => clearInterval(refreshInterval);
-    } else {
-      // Clear news data if news should not be shown
-      setNewsData(null);
-      setNewsLoading(false);
-      setNewsError(null);
-    }
-  }, [fetchNews]);
-
-  // Also check for URL changes via popstate (back/forward navigation)
-  useEffect(() => {
-    const handlePopState = () => {
-      const params = new URLSearchParams(window.location.search);
-      const showNews = params.get('news') === '1';
-
-      if (showNews) {
-        fetchNews();
-      } else {
-        setNewsData(null);
-        setNewsLoading(false);
-        setNewsError(null);
-      }
-    };
-    
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [fetchNews]);
-
   const toggleTheme = () => {
     let newTheme;
     if (themeOverride === null) {
@@ -499,11 +411,6 @@ function App() {
         onRefresh={() => fetchWeather(0, false)}
       />
       <Forecast forecast={weatherData.forecast} />
-      <NewsCarousel
-        newsData={newsData}
-        loading={newsLoading}
-        error={newsError}
-      />
     </>
   );
   };

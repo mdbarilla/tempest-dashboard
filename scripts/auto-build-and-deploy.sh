@@ -21,9 +21,9 @@ TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
 # Timestamped subdir; if build-output is locked (e.g. iCloud in Cursor), use: TEMPEST_BUILD_DIR=/tmp/tempest-build-$$ ./scripts/auto-build-and-deploy.sh network
 BUILD_DIR="${TEMPEST_BUILD_DIR:-${PROJECT_ROOT}/build-output/build-${TIMESTAMP}}"
 
-# Raspberry Pi Configuration
-PI_USER="mbarilla"
-PI_IP="192.168.1.160"
+# Raspberry Pi Configuration (set TEMPEST_PI_USER and TEMPEST_PI_IP for your device, or enter when prompted)
+PI_USER="${TEMPEST_PI_USER:-pi}"
+PI_IP="${TEMPEST_PI_IP:-}"
 PI_DEPLOY_PATH="/home/${PI_USER}/tempest-deploy"
 
 # Get current version from package.json
@@ -259,6 +259,13 @@ USBEOF
 
 elif [ "${DEPLOYMENT_METHOD}" = "network" ]; then
     echo -e "${BLUE}[Step 6/7]${NC} Network deployment to Raspberry Pi..."
+
+    if [ -z "${PI_IP}" ]; then
+        echo -e "${YELLOW}  Set TEMPEST_PI_IP and TEMPEST_PI_USER (e.g. in .env or export) or enter below.${NC}"
+        read -p "  Enter Pi IP or hostname (e.g. 192.168.1.160 or mypi.local): " PI_IP
+        read -p "  Enter Pi SSH user [${PI_USER}]: " PI_USER_INPUT
+        [ -n "${PI_USER_INPUT}" ] && PI_USER="${PI_USER_INPUT}"
+    fi
 
     # Test SSH connection
     echo "  → Testing SSH connection to ${PI_USER}@${PI_IP}..."

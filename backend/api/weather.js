@@ -6,19 +6,6 @@ const tempestAPI = require('../services/tempest-api');
 const db = require('../services/database');
 const nwsAPI = require('../services/nws-api');
 const aiBridge = require('../services/ai-bridge');
-// News service is optional (requires rss-parser, cheerio) - load only when /news endpoint is called
-let newsService = null;
-function loadNewsService() {
-  if (newsService === null) {
-    try {
-      newsService = require('../services/news-service');
-    } catch (e) {
-      console.warn('News service not available (missing dependencies):', e.message);
-      newsService = false; // Mark as attempted but failed
-    }
-  }
-  return newsService;
-}
 
 /**
  * GET /api/weather/current
@@ -1143,36 +1130,6 @@ router.get('/precipitation/today', async (req, res) => {
       count: data.length,
       total: parseFloat(total.toFixed(2)),
       data
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
-
-/**
- * GET /api/weather/news
- * Get prioritized local news headlines from Wayland Post and Weston Observer
- * ?refresh=1 bypasses the 1-hour cache
- */
-router.get('/news', async (req, res) => {
-  try {
-    const service = loadNewsService();
-    if (!service) {
-      return res.status(503).json({
-        success: false,
-        error: 'News service unavailable (missing dependencies: rss-parser, cheerio). Run: cd backend && npm install'
-      });
-    }
-    const refresh = req.query.refresh === '1' || req.query.refresh === 'true';
-    const articles = await service.getNewsArticles(refresh);
-    
-    res.json({
-      success: true,
-      count: articles.length,
-      data: articles
     });
   } catch (error) {
     res.status(500).json({

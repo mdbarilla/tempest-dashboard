@@ -3,14 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import CurrentWeather from '../components/CurrentWeather';
 import Metrics from '../components/Metrics';
 import Forecast from '../components/Forecast';
-import NewsCarousel from '../components/NewsCarousel';
-
-const Dashboard = ({ weatherData, lastUpdate, newsData, newsLoading, newsError }) => {
+const Dashboard = ({ weatherData, lastUpdate }) => {
   const navigate = useNavigate();
-
-  // Check for ?news=1 query parameter
-  const params = new URLSearchParams(window.location.search);
-  const showNews = params.get('news') === '1';
 
   const handleMetricClick = (link) => {
     navigate(link, { state: { from: 'dashboard' } });
@@ -32,14 +26,6 @@ const Dashboard = ({ weatherData, lastUpdate, newsData, newsLoading, newsError }
         />
 
         <Forecast forecast={weatherData.forecast} />
-
-        {showNews && (
-          <NewsCarousel
-            newsData={newsData}
-            loading={newsLoading}
-            error={newsError}
-          />
-        )}
       </main>
 
       <footer className="footer">

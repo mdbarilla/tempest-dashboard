@@ -42,7 +42,7 @@ No code changes are required; docs already use `your_token_here` and `.env.examp
 ### 3. Ensure git is initialized and clean
 
 ```bash
-cd "/Users/mbarilla/Library/Mobile Documents/com~apple~CloudDocs/Projects/Tempest"
+cd /path/to/tempest-dashboard
 
 # If you haven’t initialized yet:
 git init
@@ -59,7 +59,7 @@ git add -n .
 ## Create the repository on GitHub
 
 1. Go to [github.com/new](https://github.com/new).
-2. **Repository name:** e.g. `tempest-at-the-tower` or `tempest-dashboard`.
+2. **Repository name:**  `tempest-dashboard`
 3. **Description (suggested):**  
    `A modern, beautiful weather dashboard for Raspberry Pi, powered by the Tempest Weather API.`
 4. **Public.**
@@ -73,7 +73,7 @@ git add -n .
 GitHub will show “push an existing repository from the command line.” Use your actual repo URL (replace `YOUR_USERNAME` and `REPO_NAME`):
 
 ```bash
-cd "/Users/mbarilla/Library/Mobile Documents/com~apple~CloudDocs/Projects/Tempest"
+cd /path/to/tempest-dashboard
 
 # If this is the first time (no remote yet):
 git remote add origin https://github.com/YOUR_USERNAME/REPO_NAME.git
@@ -84,7 +84,7 @@ git remote add origin https://github.com/YOUR_USERNAME/REPO_NAME.git
 # Stage and commit everything (if you haven’t already)
 git add .
 git status   # review
-git commit -m "Initial commit: Tempest Weather Dashboard v1.4.x"
+git commit -m "Public release: Tempest Weather Dashboard v1.4.11 (PII generalized, local news omitted)"
 
 # Push (first time: set upstream for main)
 git branch -M main

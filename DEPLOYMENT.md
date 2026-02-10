@@ -2,7 +2,7 @@
 
 Complete guide for deploying the Tempest Weather Dashboard to your Raspberry Pi.
 
-**Production Instance**: http://towerhill.local
+**Production**: Deploy to your Pi (e.g. http://your-host.local or your Pi IP)
 **Version**: 1.4.8
 **Last Updated**: 2026-02-08
 
@@ -28,7 +28,7 @@ Complete guide for deploying the Tempest Weather Dashboard to your Raspberry Pi.
 1. Download [Raspberry Pi Imager](https://www.raspberrypi.com/software/)
 2. Flash Raspberry Pi OS (64-bit preferred) to your SD card
 3. Enable SSH in the imager settings
-4. **Set hostname: `towerhill`** (for towerhill.local access)
+4. **Set hostname** (e.g. `towerhill` for your-host.local access)
 5. Configure WiFi credentials if needed
 6. Insert SD card and boot the Pi
 
@@ -36,8 +36,8 @@ Complete guide for deploying the Tempest Weather Dashboard to your Raspberry Pi.
 
 SSH into your Pi:
 ```bash
-ssh mbarilla@towerhill.local
-# Or: ssh mbarilla@192.168.1.160
+ssh user@your-pi.local
+# Or: ssh user@<your-pi-ip>
 ```
 
 Update the system:
@@ -114,7 +114,7 @@ server {
     server_name _;
 
     # ⚠️ IMPORTANT: Point to deployment directory, not apps/dashboard/build
-    root /home/mbarilla/deployment/dashboard;
+    root /home/<your-user>/deployment/dashboard;
     index index.html;
 
     # Serve static files
@@ -169,8 +169,8 @@ Or `build-only` to only create the tarball (then transfer and run the Pi steps y
 **2. Transfer to Pi**
 ```bash
 cd build-output
-scp tempest-v*.tar.gz mbarilla@towerhill.local:~/
-# Or: scp tempest-v*.tar.gz mbarilla@192.168.1.160:~/
+scp tempest-v*.tar.gz user@your-pi.local:~/
+# Or: scp tempest-v*.tar.gz user@<your-pi-ip>:~/
 ```
 
 ### On the Raspberry Pi
@@ -409,10 +409,10 @@ sudo reboot
    ```bash
    sudo cat /etc/nginx/sites-available/tempest | grep "root"
    ```
-   Should show: `root /home/mbarilla/deployment/dashboard;`
+   Should show: `root /home/<your-user>/deployment/dashboard;`
 3. If wrong, fix it:
    ```bash
-   sudo sed -i 's|root .*|root /home/mbarilla/deployment/dashboard;|' /etc/nginx/sites-available/tempest
+   sudo sed -i 's|root .*|root /home/<your-user>/deployment/dashboard;|' /etc/nginx/sites-available/tempest
    sudo nginx -t
    sudo systemctl reload nginx
    ```
@@ -625,7 +625,7 @@ curl http://localhost:3001/api/weather/current  # Test API
 
 # Deployment from Mac
 ./scripts/auto-build-and-deploy.sh network   # Build + deploy to Pi
-# Or build-only, then: scp build-output/tempest-v*.tar.gz mbarilla@towerhill.local:~/
+# Or build-only, then: scp build-output/tempest-v*.tar.gz user@your-pi.local:~/
 
 # On Pi after transfer
 tar -xzf tempest-v*.tar.gz
