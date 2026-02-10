@@ -1,0 +1,611 @@
+/* Conditions List — list on mobile, grid on large. Card layout:
+ * [Icon + Label] | divider | [Value + secondary] [Trendline]
+ * Left column fixed width (narrow); trendline floats right; reduced left padding. */
+.conditions-list-page {
+  --conditions-left-width: 8rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: visible;
+}
+
+/* Header: same horizontal padding as footer (responsive), line inset so it doesn’t go edge-to-edge */
+.conditions-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: var(--padding-mobile) var(--padding-mobile) 1rem;
+  flex-shrink: 0;
+  background: var(--bg-card);
+  position: relative;
+}
+
+.conditions-list-header::after {
+  content: '';
+  position: absolute;
+  left: var(--padding-mobile);
+  right: var(--padding-mobile);
+  bottom: 0;
+  height: 1px;
+  background: var(--border-light);
+}
+
+@media (min-width: 769px) {
+  .conditions-list-header::after {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) and (orientation: portrait) {
+  .conditions-list-header {
+    padding: var(--padding-tablet) var(--padding-tablet) 1rem;
+  }
+  .conditions-list-header::after {
+    left: var(--padding-tablet);
+    right: var(--padding-tablet);
+  }
+}
+
+@media (min-width: 1024px) {
+  .conditions-list-header {
+    padding: var(--padding-desktop) var(--padding-desktop) 1rem;
+  }
+  .conditions-list-header::after {
+    left: var(--padding-desktop);
+    right: var(--padding-desktop);
+  }
+}
+
+.conditions-list-location {
+  flex: 1;
+  min-width: 0;
+}
+
+.conditions-list-header-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.conditions-list-header-row .conditions-list-updated {
+  margin: 0;
+}
+
+.conditions-list-header-row .view-toggle {
+  flex-shrink: 0;
+}
+
+.conditions-list-title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  margin: 0 0 0.5rem 0;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.conditions-list-city {
+  font-weight: var(--weight-regular);
+  color: var(--text-secondary);
+  font-size: 1.5rem;
+}
+
+.conditions-list-updated {
+  font-size: var(--font-size-secondary);
+  color: var(--text-secondary);
+  font-weight: var(--weight-regular);
+  margin: 0;
+  text-align: left;
+}
+
+/* Same horizontal padding as header/dashboard so layout doesn't shift when toggling */
+.conditions-list-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  padding: 0 var(--padding-mobile) var(--space-6);
+  flex: 1;
+  overflow-y: auto;
+  align-content: start;
+}
+
+@media (min-width: 768px) and (orientation: portrait) {
+  .conditions-list-grid {
+    padding-left: var(--padding-tablet);
+    padding-right: var(--padding-tablet);
+  }
+}
+
+@media (min-width: 1024px) {
+  .conditions-list-grid {
+    padding-left: var(--padding-desktop);
+    padding-right: var(--padding-desktop);
+  }
+}
+
+@media (min-width: 768px) {
+  .conditions-list-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-4);
+    padding-bottom: var(--space-6);
+  }
+}
+
+@media (min-width: 1024px) {
+  .conditions-list-grid {
+    padding-bottom: var(--space-8);
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-5);
+  }
+}
+
+@media (min-width: 1280px) {
+  .conditions-list-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Card: flex row — left (fixed) | divider | right (value then trend below); no left padding */
+.conditions-list-card {
+  background: var(--bg-card);
+  border: 1px solid var(--ui-border);
+  border-radius: 0;
+  padding: var(--space-4) var(--space-3) var(--space-4) 0;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  min-height: 0;
+  overflow: visible;
+  position: relative;
+  gap: 0;
+  animation: conditionsListCardEnter 0.35s ease-out backwards;
+}
+
+@keyframes conditionsListCardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Linked cards (metric detail views) */
+a.conditions-list-card {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+@media (max-width: 767px) {
+  /* Vertical scroll only; each card handles its own horizontal swipe */
+  .conditions-list-grid {
+    touch-action: pan-y;
+    overflow-x: hidden;
+  }
+
+  /* Swipeable row: manipulation allows both axes so our JS can detect horizontal swipes */
+  a.conditions-list-card {
+    touch-action: manipulation;
+  }
+
+  .conditions-list-card {
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .conditions-list-card:last-child {
+    border-bottom: none;
+  }
+}
+
+@media (min-width: 768px) {
+  .conditions-list-card {
+    flex-direction: column;
+    align-items: flex-start;
+    border-radius: var(--radius-md);
+    padding: var(--card-padding);
+    gap: 0;
+    border: none;
+    background: var(--overlay-on-light);
+    transition: background var(--transition-hover);
+  }
+
+  a.conditions-list-card:hover {
+    background: var(--overlay-on-light-hover);
+  }
+
+  body.theme-dark .conditions-list-card {
+    background: var(--overlay-on-dark);
+  }
+
+  body.theme-dark a.conditions-list-card:hover {
+    background: var(--overlay-on-dark-hover);
+  }
+
+  .conditions-list-divider {
+    display: none;
+  }
+
+  .conditions-list-left {
+    flex: none;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    padding-right: 0;
+    padding-bottom: 0;
+    margin-bottom: 0;
+    gap: var(--space-1);
+  }
+
+  .conditions-list-label {
+    line-height: 1.15;
+    margin-bottom: 0;
+  }
+
+  .conditions-list-card[data-conditions-card='true'] .conditions-list-label {
+    white-space: nowrap;
+  }
+
+  .conditions-list-right {
+    width: 100%;
+    padding: 0;
+    margin-top: -0.125rem;
+    gap: var(--space-2);
+  }
+
+  .conditions-list-value-block {
+    gap: var(--space-1);
+    margin-top: 0;
+    padding-top: 0;
+  }
+}
+
+/* Left column: icon above label (narrow fixed width) */
+.conditions-list-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  flex: 0 0 var(--conditions-left-width);
+  width: var(--conditions-left-width);
+  min-width: var(--conditions-left-width);
+  padding-right: var(--space-2);
+}
+
+.conditions-list-icon-wrap {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.conditions-list-icon {
+  flex-shrink: 0;
+  color: var(--text-primary);
+  opacity: 1;
+}
+
+.conditions-list-icon-weather {
+  /* WeatherIcon uses stroke; ensure same visual weight */
+}
+
+.conditions-list-label {
+  font-size: 0.9375rem;
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  line-height: 1.25;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+
+/* Vertical divider between label and values */
+.conditions-list-divider {
+  width: 1px;
+  flex-shrink: 0;
+  background: var(--border-light);
+  margin: 0 var(--space-2);
+  align-self: stretch;
+}
+
+/* Right: value block and trend side by side (row) — trend doesn’t add card height */
+.conditions-list-right {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: flex-start;
+  flex: 1;
+  min-width: 0;
+  gap: var(--space-3);
+  padding-left: var(--space-3);
+}
+
+@media (min-width: 768px) {
+  .conditions-list-right {
+    padding: 0;
+    padding-left: 0;
+    align-items: flex-end;
+  }
+}
+
+/* Conditions card: condition text + LLM description */
+.conditions-list-condition-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+}
+
+.conditions-list-condition-text {
+  font-family: 'Fraunces', var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.2;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+
+@media (min-width: 768px) {
+  .conditions-list-condition-text {
+    font-size: 2rem;
+  }
+}
+
+.conditions-list-llm-description {
+  font-size: var(--font-size-secondary);
+  font-weight: var(--weight-regular);
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+
+/* Atmosphere feedback row (thumbs up/down) — matches dashboard */
+.conditions-list-atmosphere-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.conditions-list-atmosphere-row .conditions-list-llm-description {
+  flex: 1;
+  min-width: 0;
+}
+
+.conditions-list-atmosphere-down {
+  font-size: var(--font-size-secondary);
+  color: var(--text-muted, var(--text-secondary));
+  font-style: italic;
+}
+
+.conditions-list-atmosphere-feedback {
+  display: inline-flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.conditions-list-feedback-btn {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  font-size: 1rem;
+  opacity: var(--opacity-strong);
+}
+
+.conditions-list-feedback-btn:hover {
+  opacity: var(--opacity-full);
+}
+
+.conditions-list-feedback-btn:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+.conditions-list-feedback-dismissed {
+  font-size: var(--font-size-secondary);
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+/* Value block: value + feels-like + secondary + notes (all under value, aligned left); grows in row so trend sits beside it */
+.conditions-list-value-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.conditions-list-secondary {
+  font-size: var(--font-size-secondary);
+  color: var(--text-secondary);
+  line-height: 1.35;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.conditions-list-note {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  line-height: 1.3;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+  opacity: var(--opacity-strong);
+}
+
+/* Temperature: Feels like X° • XX°/XX° (matches secondary text styling) */
+.conditions-list-feels-like-highlow {
+  font-size: var(--font-size-secondary);
+  font-weight: var(--weight-regular);
+  color: var(--text-secondary);
+  line-height: 1.35;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.conditions-list-value {
+  font-family: 'Fraunces', var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--text-primary);
+  display: flex;
+  align-items: baseline;
+  gap: 0.15em;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Mobile: prevent horizontal overflow/clipping of text in cards */
+@media (max-width: 767px) {
+  .conditions-list-label,
+  .conditions-list-secondary,
+  .conditions-list-condition-text,
+  .conditions-list-value,
+  .conditions-list-feels-like-highlow {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+  .conditions-list-condition-block {
+    min-width: 0;
+  }
+}
+
+@media (min-width: 768px) {
+  .conditions-list-value {
+    font-size: 2rem;
+  }
+}
+
+.conditions-list-unit {
+  font-size: 0.85em;
+  color: var(--text-secondary);
+  font-weight: var(--weight-medium);
+  line-height: 1;
+}
+
+/* Trend block: fixed width so right edge of all sparklines aligns with page/card right */
+.conditions-list-trend {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+  width: 140px;
+  min-width: 140px;
+  margin-left: auto;
+}
+
+.conditions-list-trend-viz {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .conditions-list-trend {
+    align-items: flex-end;
+  }
+
+  .conditions-list-trend-viz {
+    justify-content: flex-end;
+  }
+}
+
+.conditions-list-trend-viz .sparkline {
+  opacity: var(--opacity-dim);
+  transition: opacity 0.2s ease;
+}
+
+.conditions-list-trend-viz .sparkline path {
+  vector-effect: non-scaling-stroke;
+  transition: stroke 0.2s ease;
+}
+
+.conditions-list-card:hover .conditions-list-trend-viz .sparkline {
+  opacity: var(--opacity-full);
+}
+
+.conditions-list-trend-callouts {
+  display: flex;
+  align-items: center;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  font-weight: var(--weight-regular);
+  line-height: 1.2;
+}
+
+.conditions-list-trend-lo-hi {
+  white-space: nowrap;
+}
+
+/* Precip card: row height matches other secondary lines; button absolutely positioned to not affect height */
+.conditions-list-precip-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 1.35em;
+  position: relative;
+  padding-right: 3rem;
+  min-width: 0;
+  flex-wrap: nowrap;
+}
+
+.conditions-list-precip-row .conditions-list-secondary {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conditions-list-precip-row .precip-logger-wrapper {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.conditions-list-precip-row .precip-logger-wrapper .precip-add-btn {
+  padding: 0;
+  margin: 0;
+}

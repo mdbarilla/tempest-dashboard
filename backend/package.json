@@ -1,0 +1,32 @@
+{
+  "name": "tempest-backend",
+  "version": "1.4.11",
+  "description": "Backend API server for Tempest Weather Suite",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "init-db": "node scripts/init-database.js"
+  },
+  "keywords": [
+    "weather",
+    "tempest",
+    "api"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "axios": "^1.6.2",
+    "sqlite3": "^5.1.6",
+    "node-cache": "^5.1.2",
+    "express-rate-limit": "^7.1.5",
+    "rss-parser": "^3.13.0",
+    "cheerio": "^1.0.0-rc.12"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}

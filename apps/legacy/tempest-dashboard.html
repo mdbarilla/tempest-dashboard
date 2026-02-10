@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Wayland Weather</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: white;
+            padding: 20px;
+            transition: background 1.5s ease;
+        }
+
+        .container {
+            max-width: 750px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            font-weight: 300;
+            margin-bottom: 10px;
+        }
+
+        .last-update {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .temp-toggle {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 25px;
+            padding: 8px 20px;
+            margin-top: 15px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .temp-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+
+        .temp-toggle:active {
+            transform: scale(0.95);
+        }
+
+        .main-temp {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .temperature {
+            font-size: 6em;
+            font-weight: 200;
+            line-height: 1;
+        }
+
+        .feels-like {
+            font-size: 1.2em;
+            opacity: 0.8;
+            margin-top: 10px;
+        }
+
+        .conditions {
+            font-size: 1.5em;
+            margin-top: 15px;
+            text-transform: capitalize;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 30px 0 20px 0;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .metric-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-3px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .metric-label {
+            font-size: 0.7em;
+            opacity: 0.7;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-icon {
+            font-size: 1.2em;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .metric-value {
+            font-size: 1.4em;
+            font-weight: 300;
+        }
+
+        .metric-unit {
+            font-size: 0.7em;
+            opacity: 0.8;
+        }
+
+        .error {
+            background: rgba(255, 59, 48, 0.3);
+            border: 1px solid rgba(255, 59, 48, 0.6);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .loading {
+            text-align: center;
+            font-size: 1.5em;
+            margin: 50px 0;
+        }
+
+        .setup-instructions {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+        }
+
+        .setup-instructions h2 {
+            margin-bottom: 15px;
+        }
+
+        .setup-instructions ol {
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+
+        .setup-instructions code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: auto;
+            padding-top: 30px;
+            opacity: 0.6;
+            font-size: 0.9em;
+        }
+
+        .nearby-stations {
+            margin-top: 40px;
+            padding-top: 0;
+        }
+
+        .nearby-stations h2 {
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: 300;
+            margin-bottom: 15px;
+        }
+
+        .nearby-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .nearby-link {
+            color: white;
+            text-decoration: none;
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            transition: all 0.2s;
+            display: block;
+            text-align: center;
+        }
+
+        .nearby-link:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+        }
+
+        .sun-times {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin: 20px 0 30px 0;
+            font-size: 1.1em;
+        }
+
+        .sun-time {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .forecast-section {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .forecast-section h2 {
+            text-align: center;
+            font-size: 1.8em;
+            font-weight: 300;
+            margin-bottom: 20px;
+        }
+
+        .hourly-scroll {
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: nowrap;
+            padding: 10px 0;
+            margin-bottom: 20px;
+        }
+
+        .hourly-scroll::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .hourly-scroll::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .hourly-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+
+        .hourly-item {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 15px;
+            margin-right: 10px;
+            text-align: center;
+            min-width: 80px;
+            vertical-align: top;
+        }
+
+        .hourly-time {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-bottom: 8px;
+        }
+
+        .hourly-icon {
+            font-size: 2em;
+            margin: 8px 0;
+        }
+
+        .hourly-temp {
+            font-size: 1.3em;
+            font-weight: 300;
+        }
+
+        .hourly-precip {
+            font-size: 0.75em;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+
+        .daily-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+        }
+
+        .daily-item {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .daily-day {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-bottom: 8px;
+        }
+
+        .daily-icon {
+            font-size: 2.5em;
+            margin: 8px 0;
+        }
+
+        .daily-temps {
+            font-size: 1.2em;
+            margin: 8px 0;
+        }
+
+        .daily-high {
+            font-weight: 500;
+        }
+
+        .daily-low {
+            opacity: 0.7;
+            margin-left: 5px;
+        }
+
+        .daily-precip {
+            font-size: 0.75em;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+
+        .forecast-divider {
+            margin: 40px auto;
+            max-width: 600px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+
+            .temperature {
+                font-size: 4em;
+            }
+
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Tower Hill Weather</h1>
+            <div class="last-update" id="lastUpdate">Loading...</div>
+        </header>
+
+        <div id="setupInstructions" class="setup-instructions">
+            <h2>Setup Required</h2>
+            <ol>
+                <li>Go to <a href="https://tempestwx.com" target="_blank" style="color: white;">tempestwx.com</a> and sign in</li>
+                <li>Navigate to Settings → Data Authorizations → Create Token</li>
+                <li>Copy your token</li>
+                <li>Open this file in a text editor (like TextEdit or Notepad)</li>
+                <li>Find line 374 and replace <code>YOUR_API_TOKEN_HERE</code> with your token</li>
+                <li>Find line 375 and replace <code>YOUR_STATION_ID_HERE</code> with your station ID</li>
+                <li>Save the file and reload this page</li>
+            </ol>
+            <p style="margin-top: 15px;"><strong>Need your Station ID?</strong> Visit: <code>https://swd.weatherflow.com/swd/rest/stations?token=YOUR_TOKEN</code> in your browser and look for the "station_id" number.</p>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            Loading weather data...
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div id="weatherData" style="display: none;">
+            <div class="main-temp">
+                <div class="temperature" id="temperature">--°</div>
+                <div class="feels-like" id="feelsLike">Feels like --°</div>
+                <div class="conditions" id="conditions">--</div>
+                <div class="sun-times" id="sunTimes" style="display: none;">
+                    <div class="sun-time">
+                        <span>🌅</span>
+                        <span id="sunrise">--</span>
+                    </div>
+                    <div class="sun-time">
+                        <span>🌇</span>
+                        <span id="sunset">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-icon">💧</div>
+                    <div class="metric-label">Humidity</div>
+                    <div class="metric-value">
+                        <span id="humidity">--</span><span class="metric-unit">%</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon">💨</div>
+                    <div class="metric-label">Wind Speed</div>
+                    <div class="metric-value">
+                        <span id="windSpeed">--</span><span class="metric-unit">mph</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon">🧭</div>
+                    <div class="metric-label">Wind Direction</div>
+                    <div class="metric-value">
+                        <span id="windDirection">--</span><span class="metric-unit"></span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon">🌬️</div>
+                    <div class="metric-label">Wind Gust</div>
+                    <div class="metric-value">
+                        <span id="windGust">--</span><span class="metric-unit">mph</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon">🎯</div>
+                    <div class="metric-label">Pressure</div>
+                    <div class="metric-value">
+                        <span id="pressure">--</span><span class="metric-unit">inHg</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon">☀️</div>
+                    <div class="metric-label">UV Index</div>
+                    <div class="metric-value">
+                        <span id="uvIndex">--</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon">🌧️</div>
+                    <div class="metric-label">Rain Today</div>
+                    <div class="metric-value">
+                        <span id="rainToday">--</span><span class="metric-unit">in</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon">🔆</div>
+                    <div class="metric-label">Solar Radiation</div>
+                    <div class="metric-value">
+                        <span id="solarRadiation">--</span><span class="metric-unit">W/m²</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin: 20px 0 30px 0;">
+                <div class="temp-toggle" id="tempToggle" onclick="toggleTemperature()">
+                    °F / °C
+                </div>
+                <a href="#" id="mapLink" target="_blank" 
+                   style="display: inline-block; margin-top: 15px; color: white; text-decoration: none; 
+                          background: rgba(255, 255, 255, 0.2); padding: 8px 20px; border-radius: 25px; 
+                          font-size: 0.9em; border: 2px solid rgba(255, 255, 255, 0.4); 
+                          transition: all 0.3s ease;"
+                   onmouseover="this.style.background='rgba(255, 255, 255, 0.3)'; this.style.transform='scale(1.05)'"
+                   onmouseout="this.style.background='rgba(255, 255, 255, 0.2)'; this.style.transform='scale(1)'">
+                    🗺️ View on Tempest Map
+                </a>
+            </div>
+
+            <div class="forecast-section" id="hourlyForecast" style="display: none;">
+                <h2>📊 Hourly Forecast</h2>
+                <div class="hourly-scroll" id="hourlyScroll">
+                    <!-- Hourly items will be inserted here -->
+                </div>
+            </div>
+
+            <div class="forecast-section" id="dailyForecast" style="display: none;">
+                <h2>📅 10-Day Forecast</h2>
+                <div class="daily-grid" id="dailyGrid">
+                    <!-- Daily items will be inserted here -->
+                </div>
+            </div>
+
+            <hr class="forecast-divider" id="forecastDivider" style="display: none;">
+
+            <div class="nearby-stations" id="nearbyStations" style="display: none;">
+                <h2>📍 Nearby Stations</h2>
+                <div class="nearby-list" id="nearbyList">
+                    <!-- Nearby station links will be inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            Data from Tempest Weather Station • Updates every 60 seconds
+            <div style="margin-top: 10px; font-size: 0.85em; opacity: 0.7;">
+                Nearby stations shown if publicly accessible • Click any station for details
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURATION - EDIT THESE VALUES
+        // ============================================
+        const API_TOKEN = '3e59d995-9631-493b-9b22-bdcd0013ea1f';
+        const STATION_ID = '204768';
+        const LATITUDE = '42.3725';  // Your station's latitude
+        const LONGITUDE = '-71.3161'; // Your station's longitude
+        
+        // Nearby stations to display (if API access available)
+        const NEARBY_STATIONS = [
+            { id: '19706', name: 'Station 19706' },
+            { id: '23995', name: 'Station 23995' },
+            { id: '149253', name: 'Station 149253' },
+            { id: '166898', name: 'Station 166898' },
+            { id: '66789', name: 'Station 66789' },
+            { id: '161879', name: 'Station 161879' }
+        ];
+        // ============================================
+
+        const API_URL = `https://swd.weatherflow.com/swd/rest/observations/station/${STATION_ID}?token=${API_TOKEN}`;
+        const FORECAST_URL = `https://swd.weatherflow.com/swd/rest/better_forecast?station_id=${STATION_ID}&token=${API_TOKEN}`;
+        const MAP_URL = `https://tempestwx.com/map/${STATION_ID}/${LATITUDE}/${LONGITUDE}/13`;
+        
+        // Temperature unit preference (default: Fahrenheit)
+        let useFahrenheit = localStorage.getItem('useFahrenheit') !== 'false'; // Default true
+        let currentTempF = null; // Store current temp in Fahrenheit for conversions
+
+        function updateBackgroundGradient(tempF) {
+            // Temperature-based gradient colors
+            let color1, color2;
+            
+            if (tempF <= 32) {
+                // Freezing - Deep blue
+                color1 = '#1e3a8a';
+                color2 = '#3b82f6';
+            } else if (tempF <= 50) {
+                // Cold - Blue/Purple
+                color1 = '#4c1d95';
+                color2 = '#6366f1';
+            } else if (tempF <= 65) {
+                // Cool - Purple/Blue
+                color1 = '#5b21b6';
+                color2 = '#8b5cf6';
+            } else if (tempF <= 75) {
+                // Mild - Purple
+                color1 = '#667eea';
+                color2 = '#764ba2';
+            } else if (tempF <= 85) {
+                // Warm - Orange/Pink
+                color1 = '#f59e0b';
+                color2 = '#ec4899';
+            } else if (tempF <= 95) {
+                // Hot - Orange/Red
+                color1 = '#ea580c';
+                color2 = '#dc2626';
+            } else {
+                // Very Hot - Deep Red
+                color1 = '#991b1b';
+                color2 = '#dc2626';
+            }
+            
+            document.body.style.background = `linear-gradient(135deg, ${color1} 0%, ${color2} 100%)`;
+        }
+
+        function toggleTemperature() {
+            useFahrenheit = !useFahrenheit;
+            localStorage.setItem('useFahrenheit', useFahrenheit);
+            updateTemperatureDisplay();
+            // Re-fetch forecast to update hourly/daily temps
+            fetchForecast();
+        }
+
+        function updateTemperatureDisplay() {
+            if (!currentTempF) return;
+            
+            // Get the Celsius values (stored in data attributes or calculate from F)
+            const tempC = (currentTempF - 32) * 5/9;
+            const feelsLikeF = parseFloat(document.getElementById('feelsLike').dataset.fahrenheit);
+            const feelsLikeC = (feelsLikeF - 32) * 5/9;
+            
+            const tempDisplay = useFahrenheit ? currentTempF : tempC;
+            const feelsLikeDisplay = useFahrenheit ? feelsLikeF : feelsLikeC;
+            const unit = useFahrenheit ? '°F' : '°C';
+            
+            document.getElementById('temperature').textContent = Math.round(tempDisplay) + unit;
+            document.getElementById('feelsLike').textContent = `Feels like ${Math.round(feelsLikeDisplay)}${unit}`;
+        }
+
+        async function fetchNearbyStations() {
+            const nearbyList = document.getElementById('nearbyList');
+            nearbyList.innerHTML = ''; // Clear existing content
+            
+            // Create simple links for each nearby station
+            for (const station of NEARBY_STATIONS) {
+                const link = document.createElement('a');
+                link.className = 'nearby-link';
+                link.href = `https://tempestwx.com/station/${station.id}`;
+                link.target = '_blank';
+                link.textContent = station.name;
+                nearbyList.appendChild(link);
+            }
+            
+            document.getElementById('nearbyStations').style.display = 'block';
+        }
+
+        async function fetchForecast() {
+            try {
+                const response = await fetch(FORECAST_URL);
+                
+                if (!response.ok) {
+                    console.error('Forecast fetch failed:', response.status);
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                // Update condition text from forecast
+                if (data.current_conditions && data.current_conditions.conditions) {
+                    document.getElementById('conditions').textContent = data.current_conditions.conditions;
+                }
+                
+                // Display sunrise/sunset
+                if (data.current_conditions) {
+                    console.log('Current conditions:', data.current_conditions);
+                    
+                    let sunriseTimestamp = data.current_conditions.sunrise;
+                    let sunsetTimestamp = data.current_conditions.sunset;
+                    
+                    // Sometimes the data might be in forecast.daily[0]
+                    if (!sunriseTimestamp && data.forecast && data.forecast.daily && data.forecast.daily[0]) {
+                        sunriseTimestamp = data.forecast.daily[0].sunrise;
+                        sunsetTimestamp = data.forecast.daily[0].sunset;
+                        console.log('Using daily forecast sunrise/sunset:', sunriseTimestamp, sunsetTimestamp);
+                    }
+                    
+                    if (sunriseTimestamp && sunsetTimestamp) {
+                        const sunrise = new Date(sunriseTimestamp * 1000);
+                        const sunset = new Date(sunsetTimestamp * 1000);
+                        
+                        console.log('Sunrise date:', sunrise, 'Sunset date:', sunset);
+                        
+                        if (!isNaN(sunrise.getTime()) && !isNaN(sunset.getTime())) {
+                            document.getElementById('sunrise').textContent = sunrise.toLocaleTimeString('en-US', { 
+                                hour: 'numeric', 
+                                minute: '2-digit',
+                                hour12: true 
+                            });
+                            document.getElementById('sunset').textContent = sunset.toLocaleTimeString('en-US', { 
+                                hour: 'numeric', 
+                                minute: '2-digit',
+                                hour12: true 
+                            });
+                            document.getElementById('sunTimes').style.display = 'flex';
+                        } else {
+                            console.error('Invalid sunrise/sunset dates');
+                        }
+                    } else {
+                        console.log('No sunrise/sunset data found');
+                    }
+                }
+                
+                // Display hourly forecast (next 24 hours)
+                if (data.forecast && data.forecast.hourly) {
+                    const hourlyScroll = document.getElementById('hourlyScroll');
+                    hourlyScroll.innerHTML = '';
+                    
+                    const hoursToShow = data.forecast.hourly.slice(0, 24);
+                    hoursToShow.forEach(hour => {
+                        const time = new Date(hour.time * 1000);
+                        const tempC = hour.air_temperature;
+                        const tempF = (tempC * 9/5) + 32;
+                        const tempDisplay = useFahrenheit ? tempF : tempC;
+                        const unit = useFahrenheit ? '°F' : '°C';
+                        
+                        const hourItem = document.createElement('div');
+                        hourItem.className = 'hourly-item';
+                        hourItem.innerHTML = `
+                            <div class="hourly-time">${time.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true })}</div>
+                            <div class="hourly-icon">${getWeatherIcon(hour.icon)}</div>
+                            <div class="hourly-temp">${Math.round(tempDisplay)}${unit}</div>
+                            <div class="hourly-precip">💧 ${hour.precip_probability}%</div>
+                        `;
+                        hourlyScroll.appendChild(hourItem);
+                    });
+                    
+                    document.getElementById('hourlyForecast').style.display = 'block';
+                }
+                
+                // Display daily forecast
+                if (data.forecast && data.forecast.daily) {
+                    const dailyGrid = document.getElementById('dailyGrid');
+                    dailyGrid.innerHTML = '';
+                    
+                    data.forecast.daily.forEach((day, index) => {
+                        const date = new Date(day.day_start_local * 1000);
+                        const dayName = index === 0 ? 'Today' : date.toLocaleDateString('en-US', { weekday: 'short' });
+                        
+                        const highC = day.air_temp_high;
+                        const lowC = day.air_temp_low;
+                        const highF = (highC * 9/5) + 32;
+                        const lowF = (lowC * 9/5) + 32;
+                        const highDisplay = useFahrenheit ? highF : highC;
+                        const lowDisplay = useFahrenheit ? lowF : lowC;
+                        const unit = useFahrenheit ? '°' : '°';
+                        
+                        const dailyItem = document.createElement('div');
+                        dailyItem.className = 'daily-item';
+                        dailyItem.innerHTML = `
+                            <div class="daily-day">${dayName}</div>
+                            <div class="daily-icon">${getWeatherIcon(day.icon)}</div>
+                            <div class="daily-temps">
+                                <span class="daily-high">${Math.round(highDisplay)}${unit}</span>
+                                <span class="daily-low">${Math.round(lowDisplay)}${unit}</span>
+                            </div>
+                            <div class="daily-precip">💧 ${day.precip_probability}%</div>
+                        `;
+                        dailyGrid.appendChild(dailyItem);
+                    });
+                    
+                    document.getElementById('dailyForecast').style.display = 'block';
+                    document.getElementById('forecastDivider').style.display = 'block';
+                }
+                
+            } catch (error) {
+                console.error('Error fetching forecast:', error);
+            }
+        }
+
+        function getWindDirection(degrees) {
+            const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+            const index = Math.round(degrees / 22.5) % 16;
+            return directions[index];
+        }
+
+        function getConditionText(icon) {
+            const conditions = {
+                'clear-day': 'Clear',
+                'clear-night': 'Clear',
+                'cloudy': 'Cloudy',
+                'foggy': 'Foggy',
+                'partly-cloudy-day': 'Partly Cloudy',
+                'partly-cloudy-night': 'Partly Cloudy',
+                'possibly-rainy-day': 'Possibly Rainy',
+                'possibly-rainy-night': 'Possibly Rainy',
+                'possibly-sleet-day': 'Possibly Sleet',
+                'possibly-sleet-night': 'Possibly Sleet',
+                'possibly-snow-day': 'Possibly Snow',
+                'possibly-snow-night': 'Possibly Snow',
+                'possibly-thunderstorm-day': 'Possibly Thunderstorms',
+                'possibly-thunderstorm-night': 'Possibly Thunderstorms',
+                'rainy': 'Rainy',
+                'sleet': 'Sleet',
+                'snow': 'Snow',
+                'thunderstorm': 'Thunderstorms',
+                'windy': 'Windy'
+            };
+            return conditions[icon] || icon || 'Unknown';
+        }
+
+        function getWeatherIcon(icon) {
+            const icons = {
+                'clear-day': '☀️',
+                'clear-night': '🌙',
+                'cloudy': '☁️',
+                'foggy': '🌫️',
+                'partly-cloudy-day': '⛅',
+                'partly-cloudy-night': '☁️',
+                'possibly-rainy-day': '🌦️',
+                'possibly-rainy-night': '🌧️',
+                'possibly-sleet-day': '🌨️',
+                'possibly-sleet-night': '🌨️',
+                'possibly-snow-day': '🌨️',
+                'possibly-snow-night': '❄️',
+                'possibly-thunderstorm-day': '⛈️',
+                'possibly-thunderstorm-night': '⛈️',
+                'rainy': '🌧️',
+                'sleet': '🌨️',
+                'snow': '❄️',
+                'thunderstorm': '⛈️',
+                'windy': '💨'
+            };
+            return icons[icon] || '🌤️';
+        }
+
+        function formatTime(timestamp) {
+            const date = new Date(timestamp * 1000);
+            return date.toLocaleString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+        }
+
+        async function fetchWeatherData() {
+            if (API_TOKEN === 'YOUR_API_TOKEN_HERE' || STATION_ID === 'YOUR_STATION_ID_HERE') {
+                document.getElementById('setupInstructions').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('setupInstructions').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('error').style.display = 'none';
+
+            try {
+                const response = await fetch(API_URL);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (!data.obs || data.obs.length === 0) {
+                    throw new Error('No observation data available');
+                }
+
+                // Get the most recent observation
+                const obs = data.obs[0];
+                
+                // Convert temperatures from Celsius to Fahrenheit
+                const tempC = obs.air_temperature;
+                const feelsLikeC = obs.feels_like;
+                currentTempF = (tempC * 9/5) + 32;
+                const feelsLikeF = (feelsLikeC * 9/5) + 32;
+                
+                // Update background based on temperature
+                updateBackgroundGradient(currentTempF);
+
+                // Update display with current unit preference
+                const tempDisplay = useFahrenheit ? currentTempF : tempC;
+                const feelsLikeDisplay = useFahrenheit ? feelsLikeF : feelsLikeC;
+                const unit = useFahrenheit ? '°F' : '°C';
+                
+                document.getElementById('temperature').textContent = Math.round(tempDisplay) + unit;
+                document.getElementById('feelsLike').textContent = `Feels like ${Math.round(feelsLikeDisplay)}${unit}`;
+                document.getElementById('feelsLike').dataset.fahrenheit = feelsLikeF; // Store for toggle
+                // Condition will be set by forecast data
+
+                document.getElementById('humidity').textContent = Math.round(obs.relative_humidity);
+                document.getElementById('windSpeed').textContent = Math.round(obs.wind_avg);
+                document.getElementById('windDirection').textContent = getWindDirection(obs.wind_direction);
+                document.getElementById('windGust').textContent = Math.round(obs.wind_gust);
+                document.getElementById('pressure').textContent = (obs.sea_level_pressure * 0.02953).toFixed(2);
+                document.getElementById('uvIndex').textContent = obs.uv.toFixed(1);
+                document.getElementById('rainToday').textContent = obs.precip_accum_local_day.toFixed(2);
+                document.getElementById('solarRadiation').textContent = Math.round(obs.solar_radiation);
+
+                document.getElementById('lastUpdate').textContent = `Last updated: ${formatTime(obs.timestamp)}`;
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('weatherData').style.display = 'block';
+                
+                // Fetch forecast and nearby stations data
+                fetchForecast();
+                fetchNearbyStations();
+
+            } catch (error) {
+                console.error('Error fetching weather data:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = `Error: ${error.message}. Please check your API token and station ID.`;
+            }
+        }
+
+        // Fetch data immediately and then every 60 seconds
+        document.getElementById('mapLink').href = MAP_URL;
+        fetchWeatherData();
+        setInterval(fetchWeatherData, 60000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,162 @@
+/* Storm warning label – solid pill matching theme background so carousel doesn’t show through */
+.storm-warning-label {
+  padding: 0.5rem 1rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--accent-blue);
+  border-radius: var(--radius-lg);
+  color: var(--accent-blue);
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 0.5rem;
+  display: inline-block;
+  vertical-align: middle;
+  cursor: pointer;
+  transition: opacity 0.2s ease, background 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.storm-warning-label:hover {
+  opacity: var(--opacity-full);
+  background: var(--accent-overlay-subtle);
+}
+
+body.theme-dark .storm-warning-label:hover {
+  background: var(--accent-overlay-subtle);
+}
+
+/* Inline: hidden on mobile (block version shown below carousel instead) */
+@media (max-width: 480px) {
+  .storm-warning-label--inline {
+    display: none !important;
+  }
+}
+
+/* Mobile: pill button above carousel (same style as inline, different position) */
+.storm-warning-label--block {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .storm-warning-label--block {
+    display: inline-block !important;
+    /* Top/bottom so it doesn’t touch temp or carousel; negative left so text aligns and pill extends into gutter */
+    margin: 0.75rem 0 1rem calc(var(--padding-mobile, 1.75rem) - 0.5rem);
+  }
+}
+
+/* StormWarningDetail — content styles; Modal.js provides backdrop + panel */
+
+.storm-warning-detail {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.storm-warning-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+}
+
+.storm-warning-header h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.storm-warning-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: color 0.2s, background 0.2s;
+}
+
+.storm-warning-close:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.storm-warning-body {
+  padding: 1.25rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.storm-warning-block {
+  margin-bottom: 1.25rem;
+}
+
+.storm-warning-block:last-child {
+  margin-bottom: 0;
+}
+
+.storm-warning-event {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--accent-blue);
+  margin-bottom: 0.5rem;
+}
+
+.storm-warning-headline {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.storm-warning-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.storm-warning-description {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.storm-warning-description p {
+  margin: 0 0 0.75rem 0;
+}
+
+.storm-warning-description p:last-child {
+  margin-bottom: 0;
+}
+
+/* Mobile — Modal handles full-screen layout */
+@media (max-width: 480px) {
+  .storm-warning-header {
+    padding: 1rem 1.5rem;
+  }
+
+  .storm-warning-header h2 {
+    font-size: 1.25rem;
+  }
+
+  .storm-warning-close {
+    font-size: 1.75rem;
+  }
+
+  .storm-warning-body {
+    padding: 1.5rem;
+    padding-bottom: 2rem;
+  }
+}

@@ -1,0 +1,1063 @@
+/* MetricDetailView — content styles; Modal.js provides backdrop + panel */
+
+.metric-detail-container {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+
+  .metric-detail-header {
+    padding-left: var(--app-gutter-tablet);
+    padding-right: var(--app-gutter-tablet);
+  }
+
+  .metric-detail-close {
+    right: var(--app-gutter-tablet);
+  }
+
+  .metric-detail-content {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+
+  .metric-detail-chart-pill {
+    top: 0.75rem;
+    right: 0.75rem;
+  }
+
+  .metric-detail-controls {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+}
+
+.metric-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--card-padding);
+  padding-left: var(--app-gutter-mobile);
+  padding-right: var(--app-gutter-mobile);
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+  background: transparent;
+}
+
+/* Same layout as conditions list: [icon above label] | divider | [value + secondary] */
+.metric-detail-header-inner {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  flex: 1;
+  min-width: 0;
+  gap: 0;
+}
+
+/* Left column: icon above label; wide enough for "Solar Radiation" on one line */
+.metric-detail-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  flex: 0 0 10rem;
+  width: 10rem;
+  min-width: 10rem;
+  padding-right: var(--space-2);
+}
+
+.metric-detail-icon-wrap {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.metric-detail-icon {
+  color: var(--text-primary);
+  flex-shrink: 0;
+  opacity: 1;
+  display: flex;
+  align-items: center;
+  line-height: 0;
+}
+
+.metric-detail-icon svg {
+  display: block;
+}
+
+.metric-detail-label {
+  font-size: 1.25rem;
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  line-height: 1.25;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.metric-detail-divider {
+  width: 1px;
+  flex-shrink: 0;
+  background: var(--border-light);
+  margin: 0 var(--space-2);
+  align-self: stretch;
+}
+
+.metric-detail-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  flex: 1;
+  min-width: 0;
+  padding-left: var(--space-3);
+}
+
+.metric-detail-value-block {
+  font-family: 'Fraunces', var(--font-display);
+  font-size: 2rem;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--text-primary);
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin-bottom: 0.25rem;
+}
+
+.metric-detail-value-number {
+  line-height: 1;
+}
+
+.metric-detail-value-unit {
+  font-size: 1.25rem;
+  color: var(--text-primary);
+  font-weight: var(--weight-medium);
+  line-height: 1;
+  vertical-align: baseline;
+}
+
+.metric-detail-secondary {
+  font-size: var(--font-size-secondary);
+  color: var(--text-secondary);
+  font-weight: var(--weight-regular);
+  line-height: 1.4;
+}
+
+.metric-detail-close {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  min-width: 44px;
+  min-height: 44px;
+  position: absolute;
+  top: var(--card-padding);
+  right: var(--app-gutter-mobile);
+  z-index: 20;
+}
+
+.metric-detail-close:hover {
+  color: var(--text-primary);
+}
+
+.metric-detail-close:focus,
+.metric-detail-close:focus-visible {
+  outline: none;
+}
+
+.metric-detail-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: var(--modal-controls-padding-y) var(--app-gutter) var(--modal-controls-padding-bottom);
+  border-top: 1px solid var(--border-light);
+  flex-shrink: 0;
+  background: var(--bg-primary);
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+}
+
+.metric-detail-content {
+  flex: 1;
+  overflow: auto;
+  padding: var(--card-padding);
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  touch-action: pan-y pinch-zoom; /* Allow vertical scroll and pinch zoom */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+}
+
+/* Precip add/history: content doesn't scroll; only form/history body scrolls so footer stays at bottom */
+.metric-detail-content-precip-actions {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.metric-detail-content-precip-actions .metric-detail-chart-wrapper {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-detail-chart-wrapper {
+  flex: 1;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Controls row above chart: precip actions left, time range right */
+.metric-detail-chart-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.metric-detail-chart-wrapper:has(.metric-detail-precip-actions) .metric-detail-chart-controls {
+  justify-content: space-between;
+}
+
+.chart-hover-time {
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+}
+
+.chart-hover-value {
+  font-family: 'Fraunces', var(--font-display);
+  font-size: 1.25rem;
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.chart-hover-value-unit {
+  font-weight: var(--weight-regular);
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  margin-left: 0.2em;
+}
+
+.chart-hover-manual {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+body.theme-dark .chart-hover-manual {
+  color: var(--accent-blue);
+}
+
+/* Footer: on mobile, column-reverse so hover hint appears above nav; on tablet/desktop, row with nav left, badge right */
+.metric-detail-chart-footer {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  padding-bottom: 0.5rem;
+  flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .metric-detail-chart-footer {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 0.25rem;
+  }
+}
+
+/* Hover badge: on mobile centered above nav; on tablet/desktop right-aligned in row */
+.metric-detail-chart-hover-badge {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .metric-detail-chart-hover-badge {
+    width: auto;
+    justify-content: flex-end;
+  }
+}
+
+.metric-detail-chart-hover-badge__placeholder {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  opacity: var(--opacity-dim);
+}
+
+/* Light mode: tan overlay — no teal */
+.metric-detail-chart-hover-badge__value {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  background: var(--overlay-on-light-hover);
+}
+
+body.theme-dark .metric-detail-chart-hover-badge__value {
+  background: var(--accent-overlay-hover);
+}
+
+/* Precip: Graph | Edit | History — left of time range; transparent like chart pills */
+.metric-detail-precip-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.metric-detail-precip-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.625rem;
+  height: 32px;
+  min-height: 32px;
+  font-size: 0.75rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-light);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-weight: var(--weight-medium);
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.metric-detail-precip-action-btn:hover {
+  background: var(--overlay-on-light-hover);
+  color: var(--text-primary);
+}
+
+.metric-detail-precip-action-btn.active {
+  background: var(--overlay-on-light-hover);
+  color: var(--text-primary);
+}
+
+body.theme-dark .metric-detail-precip-action-btn:hover,
+body.theme-dark .metric-detail-precip-action-btn.active {
+  background: var(--accent-overlay-hover);
+  color: var(--accent-blue);
+}
+
+/* Icon size in precip action buttons (Edit, History) */
+.metric-detail-precip-action-btn .metric-detail-precip-action-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: currentColor;
+}
+
+/* Precip form and history: scrollable body so footer stays at bottom */
+.metric-detail-precip-form,
+.metric-detail-precip-history {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Precip footer: always at bottom of modal (no rule above) */
+.metric-detail-precip-footer {
+  flex-shrink: 0;
+  padding-top: 0.75rem;
+}
+
+.metric-detail-precip-footer .logger-actions {
+  margin-top: 0;
+}
+
+/* Match condition modal submit button height (taller than default logger buttons) */
+.metric-detail-precip-footer .submit-btn,
+.metric-detail-precip-footer .cancel-btn {
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+}
+
+/* Form: section spacing (tokens) and bold headings; flex so notes can fill space */
+.metric-detail-precip-form .logger-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  flex: 1;
+  min-height: 0;
+}
+
+.metric-detail-precip-form .precip-form-notes-group {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-detail-precip-form .precip-form-notes-group textarea {
+  flex: 1;
+  min-height: 6rem;
+  resize: none;
+}
+
+/* Amount + Time side by side on tablet/desktop */
+.precip-form-amount-time-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+@media (min-width: 768px) {
+  .precip-form-amount-time-row {
+    flex-direction: row;
+    gap: var(--space-4);
+    align-items: flex-start;
+  }
+
+  .precip-form-amount-time-row .form-group {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.metric-detail-precip-form .form-group label {
+  font-weight: var(--weight-bold);
+}
+
+.metric-detail-precip-form .form-group input,
+.metric-detail-precip-form .form-group textarea {
+  background: transparent;
+  border: 1px solid var(--border-light);
+}
+
+/* Amount: custom up/down spinners; same bg tint as condition/precip type buttons */
+.metric-detail-precip-form .precip-amount-wrap {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  background: var(--overlay-on-light);
+  overflow: hidden;
+}
+
+body.theme-dark .metric-detail-precip-form .precip-amount-wrap {
+  background: var(--overlay-on-dark);
+}
+
+.metric-detail-precip-form .precip-amount-wrap input[type="number"] {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  border: none;
+  border-radius: 0;
+  padding-left: 0.75rem;
+  padding-right: 0.5rem;
+  background: transparent;
+  -moz-appearance: textfield;
+}
+
+.metric-detail-precip-form .precip-amount-wrap input[type="number"]:focus {
+  outline: none;
+}
+
+.metric-detail-precip-form .precip-amount-wrap:focus-within {
+  border-color: var(--text-primary);
+}
+
+.metric-detail-precip-form .precip-amount-wrap input[type="number"]::-webkit-inner-spin-button,
+.metric-detail-precip-form .precip-amount-wrap input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+.metric-detail-precip-form .precip-amount-spinners {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  border-left: 1px solid var(--border-light);
+  background: var(--overlay-on-light);
+}
+
+body.theme-dark .metric-detail-precip-form .precip-amount-spinners {
+  background: var(--overlay-on-dark);
+}
+
+.metric-detail-precip-form .precip-amount-spinner-btn {
+  flex: 1;
+  min-height: 22px;
+  min-width: 44px;
+  padding: 0 0.5rem;
+  background: var(--overlay-on-light);
+  border: none;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+body.theme-dark .metric-detail-precip-form .precip-amount-spinner-btn {
+  background: var(--overlay-on-dark);
+}
+
+.metric-detail-precip-form .precip-amount-spinner-btn:last-child {
+  border-bottom: none;
+}
+
+.metric-detail-precip-form .precip-amount-spinner-btn:hover:not(:disabled) {
+  background: var(--overlay-on-light-hover);
+  color: var(--text-primary);
+}
+
+.metric-detail-precip-form .precip-amount-spinner-btn:disabled {
+  opacity: var(--opacity-muted);
+  cursor: not-allowed;
+}
+
+body.theme-dark .metric-detail-precip-form .precip-amount-spinner-btn:hover:not(:disabled) {
+  background: var(--accent-overlay-hover);
+  color: var(--accent-blue);
+}
+
+.metric-detail-precip-form .form-group input:focus,
+.metric-detail-precip-form .form-group textarea:focus {
+  outline: none;
+  border-color: var(--text-primary);
+}
+
+/* Caret arrows: stroke-only, inherit button color */
+.metric-detail-precip-form .precip-spinner-caret {
+  color: currentColor;
+}
+
+/* Time picker: same boxed treatment as amount; center row so ":" aligns with boxes */
+.metric-detail-precip-form .precip-time-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.metric-detail-precip-form .precip-time-sep {
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+  line-height: 1;
+  padding: 0 0.15rem;
+  align-self: center;
+}
+
+.metric-detail-precip-form .precip-time-wrap-minute {
+  margin-right: var(--space-2);
+}
+
+.metric-detail-precip-form .precip-time-wrap {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  background: var(--overlay-on-light);
+  overflow: hidden;
+  min-height: 44px;
+}
+
+body.theme-dark .metric-detail-precip-form .precip-time-wrap {
+  background: var(--overlay-on-dark);
+}
+
+.metric-detail-precip-form .precip-time-wrap select {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  border: none;
+  border-radius: 0;
+  padding-left: 0.5rem;
+  padding-right: 0.25rem;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.metric-detail-precip-form .precip-time-wrap select:focus {
+  outline: none;
+}
+
+.metric-detail-precip-form .precip-time-wrap:focus-within {
+  border-color: var(--text-primary);
+}
+
+.metric-detail-precip-form .precip-time-spinners {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  border-left: 1px solid var(--border-light);
+  background: var(--overlay-on-light);
+}
+
+body.theme-dark .metric-detail-precip-form .precip-time-spinners {
+  background: var(--overlay-on-dark);
+}
+
+.metric-detail-precip-form .precip-time-spinner-btn {
+  flex: 1;
+  min-height: 22px;
+  min-width: 36px;
+  padding: 0 0.35rem;
+  background: var(--overlay-on-light);
+  border: none;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  font-size: 0.6rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+body.theme-dark .metric-detail-precip-form .precip-time-spinner-btn {
+  background: var(--overlay-on-dark);
+}
+
+.metric-detail-precip-form .precip-time-spinner-btn:last-child {
+  border-bottom: none;
+}
+
+.metric-detail-precip-form .precip-time-spinner-btn:hover:not(:disabled) {
+  background: var(--overlay-on-light-hover);
+  color: var(--text-primary);
+}
+
+.metric-detail-precip-form .precip-time-spinner-btn:disabled {
+  opacity: var(--opacity-muted);
+  cursor: not-allowed;
+}
+
+body.theme-dark .metric-detail-precip-form .precip-time-spinner-btn:hover:not(:disabled) {
+  background: var(--accent-overlay-hover);
+  color: var(--accent-blue);
+}
+
+.metric-detail-precip-form .precip-time-picker select {
+  background: transparent;
+}
+
+/* Precip type options: match condition picker (overlay/tint only, no outline) */
+.metric-detail-precip-form .precip-type-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.metric-detail-precip-form .precip-type-option {
+  padding: 0.75rem 1rem;
+  min-height: 44px;
+  background: var(--overlay-on-light);
+  border: none;
+  border-radius: var(--radius-pill);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s ease, opacity 0.2s ease;
+  text-align: left;
+  opacity: var(--opacity-dim);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.75rem;
+}
+
+.metric-detail-precip-form .precip-type-option:hover {
+  opacity: var(--opacity-strong);
+  background: var(--overlay-on-light-hover);
+}
+
+.metric-detail-precip-form .precip-type-option.selected {
+  opacity: var(--opacity-full);
+  color: var(--text-primary);
+  background: var(--overlay-on-light-strong);
+}
+
+/* Override PrecipitationLogger outline styling in light mode so we match condition edit (tint only) */
+body:not(.theme-dark) .metric-detail-precip-form .precip-type-option {
+  background: var(--overlay-on-light);
+  border: none;
+  opacity: var(--opacity-dim);
+}
+
+body:not(.theme-dark) .metric-detail-precip-form .precip-type-option:hover {
+  opacity: var(--opacity-strong);
+  background: var(--overlay-on-light-hover);
+}
+
+body:not(.theme-dark) .metric-detail-precip-form .precip-type-option.selected {
+  opacity: var(--opacity-full);
+  background: var(--overlay-on-light-strong);
+  border: none;
+}
+
+.metric-detail-precip-form .precip-type-option-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.metric-detail-precip-form .precip-type-option-icon svg {
+  display: block;
+}
+
+.metric-detail-precip-form .precip-type-option-label {
+  flex: 1;
+  min-width: 0;
+}
+
+body.theme-dark .metric-detail-precip-form .precip-type-option {
+  background: var(--overlay-on-dark);
+}
+
+body.theme-dark .metric-detail-precip-form .precip-type-option:hover {
+  opacity: var(--opacity-strong);
+  background: var(--overlay-on-dark-hover);
+}
+
+body.theme-dark .metric-detail-precip-form .precip-type-option.selected {
+  opacity: var(--opacity-full);
+  background: var(--overlay-on-dark-strong);
+}
+
+.metric-detail-precip-form .precip-type-option:disabled {
+  opacity: var(--opacity-muted);
+  cursor: not-allowed;
+}
+
+/* History: transparent bg like chart buttons; bold "Today's Total" heading, token spacing */
+.metric-detail-precip-history .logger-body {
+  gap: var(--space-5);
+}
+
+.metric-detail-precip-history .history-total {
+  background: transparent;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-2);
+}
+
+.metric-detail-precip-history .total-label {
+  font-weight: var(--weight-bold);
+}
+
+.metric-detail-precip-history .history-entry {
+  background: transparent;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+}
+
+.metric-detail-chart-pill {
+  flex-shrink: 0;
+}
+
+.metric-detail-chart-pill .time-range-selector {
+  font-size: 0.75rem;
+  border-radius: var(--radius-pill);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  height: 32px;
+}
+
+.metric-detail-chart-pill .time-range-button {
+  padding: 0.25rem 0.625rem;
+  height: 32px;
+  min-height: 32px;
+  font-size: 0.75rem;
+  background: var(--bg-primary);
+}
+
+/* Light mode: tan shades to match theme — no teal */
+.metric-detail-chart-pill .time-range-button.active {
+  background: var(--overlay-on-light-hover);
+  color: var(--text-primary);
+}
+
+body.theme-dark .metric-detail-chart-pill .time-range-button.active {
+  background: var(--accent-overlay-hover);
+  color: var(--accent-blue);
+}
+
+/* Chart area below controls */
+.metric-detail-chart-area {
+  flex: 1;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-detail-chart-scroll {
+  flex: 1;
+  min-height: 280px;
+}
+
+.metric-detail-chart-scroll-inner {
+  min-height: 280px;
+  height: 100%;
+}
+
+/* Mobile: fixed-width scrollable chart so it stays legible */
+@media (max-width: 767px) {
+  .metric-detail-chart-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pinch-zoom;
+    margin: 0 -1rem; /* Extend scroll to edges */
+  }
+
+  .metric-detail-chart-scroll-inner {
+    min-width: 560px;
+  }
+}
+
+/* Pagination: illuminated metric icons */
+.metric-detail-pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.metric-detail-pagination-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.metric-detail-pagination-btn:hover {
+  background: var(--overlay-on-light-hover);
+  color: var(--text-primary);
+}
+
+body.theme-dark .metric-detail-pagination-btn:hover {
+  background: var(--overlay-on-dark-subtle);
+  color: var(--text-primary);
+}
+
+/* Light mode: tan shades — no teal; blue reserved for trend line and advisory */
+.metric-detail-pagination-btn.active {
+  background: var(--overlay-on-light-hover);
+  color: var(--text-primary);
+}
+
+body.theme-dark .metric-detail-pagination-btn.active {
+  background: var(--accent-overlay-hover);
+  color: var(--accent-blue);
+}
+
+.metric-detail-pagination-btn:focus-visible {
+  outline: 2px solid var(--text-primary);
+  outline-offset: 2px;
+}
+
+body.theme-dark .metric-detail-pagination-btn:focus-visible {
+  outline: 2px solid var(--accent-blue);
+}
+
+/* Pressure unit toggle: inHg | mb, match menu button stroke and colors */
+.metric-detail-pressure-unit-pill {
+  display: inline-flex;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  font-size: 0.75rem;
+}
+
+.metric-detail-unit-btn {
+  padding: 0.2rem 0.5rem;
+  min-height: 24px;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.metric-detail-unit-btn:not(:last-child) {
+  border-right: 1px solid var(--border-light);
+}
+
+.metric-detail-unit-btn.active {
+  font-weight: var(--weight-semibold);
+  background: var(--overlay-on-light-hover);
+}
+
+body.theme-dark .metric-detail-unit-btn.active {
+  background: var(--overlay-on-dark-strong);
+}
+
+.metric-detail-unit-btn:hover:not(.active) {
+  background: var(--overlay-on-light);
+}
+
+body.theme-dark .metric-detail-unit-btn:hover:not(.active) {
+  background: var(--overlay-on-dark-subtle);
+}
+
+.metric-detail-loading,
+.metric-detail-error,
+.metric-detail-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 400px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--border-light);
+  border-top-color: var(--text-primary);
+  border-radius: var(--radius-full);
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+body.theme-dark .loading-spinner {
+  border-top-color: var(--accent-blue);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.retry-button {
+  margin-top: 1rem;
+  padding: 0.5rem 1.5rem;
+  background: transparent;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: var(--font-size-secondary);
+  font-weight: var(--weight-medium);
+  transition: all 0.2s ease;
+  min-height: 44px;
+}
+
+.retry-button:hover {
+  border-color: var(--text-primary);
+  color: var(--text-primary);
+}
+
+.retry-button:focus-visible {
+  outline: 2px solid var(--text-primary);
+  outline-offset: 2px;
+}
+
+body.theme-dark .retry-button:hover {
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+}
+
+body.theme-dark .retry-button:focus-visible {
+  outline: 2px solid var(--accent-blue);
+}
+
+
+/* Mobile: full-page feel — minimal edge padding only */
+@media (max-width: 767px) {
+  .metric-detail-container .metric-detail-header {
+    padding: 0.75rem 1rem;
+    padding-left: var(--app-gutter-mobile);
+    padding-right: var(--app-gutter-mobile);
+  }
+
+  .metric-detail-close {
+    right: var(--app-gutter-mobile);
+  }
+
+  .metric-detail-label {
+    font-size: 1.25rem;
+  }
+
+  .metric-detail-value-block {
+    font-size: 2rem;
+  }
+
+  .metric-detail-controls {
+    padding: 1rem 1rem;
+  }
+
+  /* Unified spacing: same from header line to controls as from screen edge to content; precip tab row aligned in all views */
+  .metric-detail-content {
+    padding: var(--app-gutter-mobile) var(--app-gutter-mobile) 1rem;
+  }
+
+  /* Precip form/history: same top/side padding as graph view so tab nav never shifts */
+  .metric-detail-content-precip-actions.metric-detail-content {
+    padding: var(--app-gutter-mobile) var(--app-gutter-mobile) 0.75rem;
+  }
+
+  .metric-detail-precip-form .logger-body,
+  .metric-detail-precip-history .logger-body {
+    padding: 0.5rem 0 0.75rem;
+  }
+
+  .metric-detail-precip-footer .logger-actions {
+    padding: 0.5rem 0 0;
+  }
+
+  .metric-detail-chart-wrapper {
+    min-height: 300px;
+  }
+}

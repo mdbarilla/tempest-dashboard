@@ -1,0 +1,277 @@
+/**
+ * Ask modal — chat UI for historical weather questions.
+ * Uses design tokens only; minimal new styling.
+ */
+
+.ask-modal {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0;
+  flex: 1;
+}
+
+/* Desktop (xl panel): modal has fixed size; chat list scrolls inside, does not expand panel */
+@media (min-width: 768px) {
+  .ask-modal {
+    min-height: 100%;
+  }
+}
+
+.ask-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--card-padding);
+  padding-left: var(--app-gutter-mobile);
+  padding-right: var(--app-gutter-mobile);
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+}
+
+.ask-modal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ask-modal-start-over {
+  font-family: var(--font-primary);
+  font-size: var(--font-size-secondary);
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-2);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color var(--transition-hover);
+}
+
+.ask-modal-start-over:hover {
+  color: var(--text-primary);
+}
+
+.ask-modal-title {
+  font-size: 1.25rem;
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.ask-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: var(--space-2);
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-hover), background var(--transition-hover);
+}
+
+.ask-modal-close:hover {
+  color: var(--text-primary);
+  background: var(--overlay-on-light);
+}
+
+body.theme-dark .ask-modal-close:hover {
+  background: var(--overlay-on-dark-hover);
+}
+
+.ask-modal-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-4) var(--app-gutter-mobile);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.ask-message {
+  max-width: 90%;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  animation: askMessageEnter 0.25s ease-out;
+}
+
+.ask-message--user {
+  align-self: flex-end;
+  background: var(--overlay-on-light-strong);
+  color: var(--text-primary);
+}
+
+body.theme-dark .ask-message--user {
+  background: var(--overlay-on-dark-strong);
+}
+
+.ask-message--assistant {
+  align-self: flex-start;
+  background: var(--overlay-on-light);
+  color: var(--text-primary);
+}
+
+body.theme-dark .ask-message--assistant {
+  background: var(--overlay-on-dark);
+}
+
+.ask-message--empty {
+  opacity: var(--opacity-dim);
+}
+
+.ask-message-text {
+  font-family: var(--font-primary);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  display: block;
+}
+
+.ask-message-text--loading {
+  font-style: italic;
+  opacity: var(--opacity-dim);
+}
+
+@keyframes askMessageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ask-message-chart {
+  margin-top: var(--space-3);
+  height: 220px;
+  min-height: 180px;
+  width: 100%;
+}
+
+.ask-message-chart--loading,
+.ask-message-chart--error {
+  font-size: var(--font-size-secondary);
+  color: var(--text-secondary);
+  padding: var(--space-2);
+}
+
+.ask-message-chart--error {
+  color: var(--error);
+}
+
+.ask-modal-footer {
+  flex-shrink: 0;
+  padding: var(--space-4) var(--app-gutter-mobile);
+  border-top: 1px solid var(--border-light);
+  background: var(--bg-primary);
+}
+
+.ask-form {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.ask-input {
+  flex: 1;
+  font-family: var(--font-primary);
+  font-size: 0.9375rem;
+  color: var(--text-primary);
+  background: var(--overlay-on-light);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  min-height: 44px;
+}
+
+.ask-input::placeholder {
+  color: var(--text-secondary);
+}
+
+.ask-input:focus {
+  outline: none;
+  border-color: var(--text-secondary);
+}
+
+body.theme-dark .ask-input {
+  background: var(--overlay-on-dark);
+  border-color: var(--border-on-dark);
+  color: var(--text-on-dark-primary);
+}
+
+.ask-submit {
+  font-family: var(--font-primary);
+  font-size: 0.875rem;
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  background: var(--overlay-on-light-strong);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-4);
+  min-height: 44px;
+  cursor: pointer;
+  transition: background var(--transition-hover), border-color var(--transition-hover);
+}
+
+.ask-submit:hover:not(:disabled) {
+  background: var(--overlay-on-light-hover);
+}
+
+.ask-submit:disabled {
+  opacity: var(--opacity-muted);
+  cursor: not-allowed;
+}
+
+body.theme-dark .ask-submit {
+  background: var(--overlay-on-dark-strong);
+  border-color: var(--border-on-dark);
+  color: var(--text-on-dark-primary);
+}
+
+body.theme-dark .ask-submit:hover:not(:disabled) {
+  background: var(--overlay-on-dark-hover);
+}
+
+.ask-quick-replies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.ask-quick-reply {
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-primary);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  background: var(--overlay-on-light);
+  border: none;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background var(--transition-hover), color var(--transition-hover);
+}
+
+.ask-quick-reply:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: var(--overlay-on-light-hover);
+}
+
+.ask-quick-reply:disabled {
+  opacity: var(--opacity-muted);
+  cursor: not-allowed;
+}
+
+body.theme-dark .ask-quick-reply {
+  background: var(--overlay-on-dark);
+  color: var(--text-on-dark-dim);
+}
+
+body.theme-dark .ask-quick-reply:hover:not(:disabled) {
+  background: var(--overlay-on-dark-hover);
+  color: var(--text-on-dark-primary);
+}

@@ -1,0 +1,790 @@
+/* ===========================================
+   CSS Custom Properties - Responsive Padding System
+   =========================================== */
+:root {
+  --padding-mobile: 1.75rem;
+  --padding-tablet: 3rem;
+  --padding-desktop: 3rem;
+}
+
+/* Default Mobile Layout */
+.current-weather {
+  padding: var(--padding-mobile) 0 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: visible;
+}
+
+.current-weather-layout {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  justify-content: center;
+}
+
+.weather-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  padding: 0 var(--padding-mobile);
+}
+
+.location-info h1 {
+  font-size: 1.75rem;
+  font-weight: var(--weight-medium);
+  margin: 0 0 0.5rem 0;
+  color: var(--text-primary);
+}
+
+.location-city {
+  font-weight: var(--weight-regular);
+  color: var(--text-secondary);
+  font-size: 1.5rem;
+}
+
+.weather-header-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.weather-header-row .last-update {
+  margin: 0;
+}
+
+.weather-header-row .view-toggle {
+  flex-shrink: 0;
+}
+
+.last-update {
+  font-size: var(--font-size-secondary);
+  color: var(--text-secondary);
+  font-weight: var(--weight-regular);
+  /* no opacity – must match metrics secondary, timestamp tier */
+}
+
+.weather-icon {
+  flex-shrink: 0;
+  font-size: 2.5rem;
+  color: var(--text-primary);
+}
+
+/* Current Weather Layout */
+.current-weather-layout {
+  display: flex;
+  flex-direction: column;
+}
+
+.weather-content-row {
+  padding: 0;
+  overflow: visible;
+}
+
+.temperature-display {
+  margin-bottom: 0;
+  padding: 0 var(--padding-mobile);
+}
+
+.temperature {
+  font-family: 'Fraunces', var(--font-display);
+  font-size: 6rem;
+  font-weight: 500;
+  line-height: 0.9;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+  margin-left: var(--hero-optical-offset);  /* Optical kerning - aligns serif "1" with text */
+  letter-spacing: -0.02em;
+}
+
+.temperature-link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.temperature-link:hover {
+  opacity: var(--opacity-strong);
+}
+
+.temperature-link:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 4px;
+  border-radius: var(--radius-sm);
+}
+
+.metadata-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.temp-row {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.conditions-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+}
+
+.conditions {
+  font-size: 1.5rem;
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  margin-bottom: 0;
+}
+
+.high-low {
+  font-family: 'Fraunces', var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+}
+
+.temp-separator {
+  color: var(--text-muted);
+  font-weight: var(--weight-regular);
+}
+
+.temp-high-display {
+  color: var(--text-primary);
+}
+
+.temp-low-display {
+  color: var(--text-secondary);
+}
+
+.feels-like {
+  font-size: 1.125rem;
+  font-weight: var(--weight-regular);
+  color: var(--text-secondary);
+}
+
+/* Hourly Carousel - Mobile */
+.hourly-preview-section {
+  position: relative;
+  width: 100%;
+  padding: 2rem 0 0 0;
+  overflow: visible;
+}
+
+@media (max-width: 767px) {
+  .hourly-preview-section {
+    padding-top: 1rem;
+  }
+
+  .hourly-preview {
+    padding-left: 0; /* remove 0.25rem so trendline and first item align flush left */
+  }
+}
+
+.hourly-preview-container {
+  /* No gradient, no inset - clean background */
+  background: transparent;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+}
+
+.hourly-preview {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: 0 var(--padding-mobile) 0 0.25rem;
+  /* Gap is set inline via JS to match trendline calculations */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  /* Hide scrollbars */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+  box-sizing: border-box;
+}
+
+/* Hide scrollbar for Chrome/Safari */
+.hourly-preview::-webkit-scrollbar {
+  display: none;
+}
+
+.hourly-item {
+  flex: 0 0 auto;
+  text-align: center;
+  min-width: 72px;
+  overflow: visible;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hourly-item:first-child {
+  text-align: left;
+}
+
+.hourly-item:last-child {
+  padding-right: 0;
+}
+
+.hourly-time {
+  font-size: 0.75rem;
+  font-weight: var(--weight-medium);
+  color: var(--text-muted);
+  margin-bottom: 1.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.hourly-icon-small {
+  margin: 0;
+  opacity: 1 !important;
+  color: var(--text-primary) !important;
+  position: relative;
+  cursor: default;
+}
+
+/* Tooltip on hover */
+/* Tooltip removed */
+
+.hourly-temp {
+  font-family: 'Fraunces', var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-top: 0;
+}
+
+.hourly-trendline {
+  margin-top: -0.5rem;
+}
+
+.hourly-precip {
+  font-size: 0.75rem;
+  font-weight: var(--weight-medium);
+  color: var(--accent-blue);
+  margin-top: 0.25rem;
+  opacity: var(--opacity-strong);
+}
+
+/* ===========================================
+   Portrait Tablet Layout (tall viewports)
+   =========================================== */
+@media (min-width: 768px) and (orientation: portrait) {
+  .current-weather {
+    padding: var(--padding-tablet) 0 0;
+    overflow: visible;
+  }
+
+  .weather-header {
+    margin-bottom: 1rem;
+    padding: 0 var(--padding-tablet);
+  }
+
+  /* Larger weather icon for portrait */
+  .weather-header .weather-icon {
+    width: 80px;
+    height: 80px;
+  }
+
+  /* Conditions text positioned under header in upper left */
+  .metadata-container {
+    padding: 0;
+    margin: 0 0 0.5rem 0;
+  }
+
+  .conditions-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .conditions {
+    font-size: 1.5rem;
+  }
+
+  /* Temperature and carousel in vertical layout */
+  .weather-content-row {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0;
+    gap: 1.5rem;
+  }
+
+  .temperature-display {
+    padding: 0 var(--padding-tablet);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 0;
+  }
+
+  .temperature {
+    font-size: 10rem;
+    line-height: 0.85;
+    margin-bottom: 0;
+    margin-left: -0.03em;
+  }
+
+  /* Carousel extends full width */
+  .hourly-preview-section {
+    width: 100%;
+    margin: 0;
+  }
+
+  .hourly-preview-container {
+    margin: 0;
+    padding: 0;
+  }
+
+  .hourly-preview {
+    padding: 0 var(--padding-tablet) 0.5rem 1.5rem;
+  }
+
+  .hourly-item:first-child {
+    padding-left: 0;
+  }
+
+  .hourly-item:last-child {
+    padding-right: 0;
+  }
+}
+
+/* ===========================================
+   Wide Desktop Layout (1440px+) - Horizontal Overlay
+   =========================================== */
+@media (min-width: 1440px) {
+  .current-weather {
+    padding: var(--padding-tablet) 0 2.5rem;
+    overflow: visible;
+  }
+
+  .weather-header {
+    margin-bottom: 1rem;
+    padding: 0 var(--padding-tablet);
+  }
+
+  /* Top zone with fixed height to prevent bottom sections from moving */
+  .weather-content-row {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 0;
+    padding: 0;
+    height: 180px; /* Optimized height for better spacing */
+    overflow: visible;
+  }
+
+  /* Temperature component: absolutely positioned on left with gradient fade */
+  .temperature-display {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding-left: var(--padding-tablet);
+    padding-right: 3rem;
+    margin-bottom: 0;
+    min-width: 320px;
+    /* Gradient fade on the right to let carousel scroll underneath */
+    background: linear-gradient(to right, var(--bg-primary) 70%, transparent 100%);
+  }
+
+  /* Temperature - no resizing, stays large */
+  .temperature {
+    font-size: 9rem;
+    line-height: 0.9;
+    margin-bottom: 0.5rem;
+    margin-left: -0.08em;
+  }
+
+  /* Metadata wrapper: --space-1 between conditions, H/L, and LLM line for consistent rhythm */
+  .metadata-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+  }
+
+  .conditions-container {
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: auto;
+    transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .conditions {
+    font-size: 1.25rem;
+    margin-bottom: 0;
+  }
+
+  /* High/low */
+  .temperature-display .high-low {
+    font-family: 'Fraunces', var(--font-display);
+    font-size: 2rem;
+    font-weight: 500;
+    display: flex;
+    align-items: baseline;
+    gap: 0.25rem;
+    margin-top: 0.25rem;
+    margin-bottom: 0;
+  }
+
+  /* Feels like */
+  .temperature-display .feels-like {
+    font-family: var(--font-body);
+    font-size: 1.25rem;
+    font-weight: var(--weight-regular);
+    color: var(--text-secondary);
+    margin-top: 0.125rem;
+    margin-bottom: 0;
+  }
+
+  /* LLM line: more space above (from H/L) and below (toward metrics); --space-2/3 for rhythm */
+  .temperature-display .atmospheric-description {
+    margin-top: var(--space-2);
+    margin-bottom: var(--space-3);
+  }
+
+  .temperature-display .atmospheric-description-row {
+    margin-top: var(--space-2);
+    margin-bottom: var(--space-3);
+  }
+
+  .temperature-display .atmospheric-description-row .atmospheric-description {
+    margin: 0;
+  }
+
+  /* Carousel section - positioned further down and right */
+  .hourly-preview-section {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 40px;
+    bottom: 0;
+    width: 100%;
+    min-width: 0;
+    overflow: visible;
+  }
+
+  .hourly-preview-container {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: transparent;
+    display: flex;
+    align-items: flex-end;
+    overflow: visible;
+  }
+
+  .hourly-preview {
+    display: flex;
+    align-items: flex-end;
+    padding: 0 var(--padding-tablet) 0.5rem 360px; /* Left padding creates space for temp display overlay */
+    /* Gap is set inline via JS to match trendline calculations */
+    overflow-x: auto;
+    overflow-y: visible;
+    /* Hide scrollbars on desktop too */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .hourly-preview::-webkit-scrollbar {
+    display: none;
+    height: 0;
+    width: 0;
+  }
+
+  .hourly-item {
+    min-width: 70px;
+    padding-bottom: 0;
+    flex-shrink: 0;
+  }
+
+  .hourly-item:first-child {
+    text-align: center;
+  }
+
+  .hourly-time {
+    font-size: 0.8rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .hourly-icon-small {
+    margin: 0.5rem 0 0.75rem 0;
+  }
+
+  .hourly-temp {
+    font-size: 1.5rem;
+    margin-top: 0.75rem;
+  }
+
+  .hourly-precip {
+    font-size: 0.8rem;
+  }
+}
+
+/* ===========================================
+   Medium-Wide Desktop (1024px-1439px) - Larger Portrait Layout
+   =========================================== */
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .current-weather {
+    padding: var(--padding-desktop) 0 0;
+  }
+
+  .weather-header {
+    padding: 0 var(--padding-desktop);
+  }
+
+  .weather-header .weather-icon {
+    width: 90px;
+    height: 90px;
+  }
+
+  .weather-content-row {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0;
+    gap: 2rem;
+  }
+
+  .temperature-display {
+    padding: 0 var(--padding-desktop);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 0;
+  }
+
+  .temperature {
+    font-size: 11rem;
+    line-height: 0.85;
+    margin-bottom: 0;
+    margin-left: -0.03em;
+  }
+
+  .conditions {
+    font-size: 1.5rem;
+  }
+
+  .hourly-preview-section {
+    width: 100%;
+    margin: 0;
+  }
+
+  .hourly-preview {
+    padding: 0 var(--padding-desktop) 0.5rem 1.5rem;
+  }
+
+  .hourly-item {
+    min-width: 85px;
+  }
+
+  .hourly-temp {
+    font-size: 1.75rem;
+  }
+}
+
+/* ===========================================
+   Extra Large Desktop Overrides (1440px+) - Horizontal Overlay Adjustments
+   =========================================== */
+@media (min-width: 1440px) {
+  .current-weather {
+    padding: var(--padding-tablet) 0 2.5rem;
+  }
+
+  .weather-content-row {
+    height: 240px;
+    overflow: visible;
+  }
+
+  .temperature {
+    font-size: 11rem;
+  }
+
+  .temperature-display {
+    min-width: 420px;
+  }
+
+  .high-low,
+  .feels-like {
+    display: flex !important;
+  }
+
+  .hourly-preview-section {
+    left: 0; /* Full width - scrolls under temp display */
+  }
+
+  .hourly-preview {
+    padding-left: 500px; /* Clearance for temp block; balanced with carousel width (was 580) */
+  }
+
+  /* Gap values set inline via JS */
+
+  .hourly-item {
+    min-width: 90px;
+  }
+
+  .hourly-temp {
+    font-size: 2rem;
+  }
+}
+
+/* LLM condition summary (below H/L line in metadata, local-gated; words only, no numbers). Matches timestamp and metrics secondary (--font-size-secondary, --text-secondary). */
+.atmospheric-description {
+  font-family: var(--font-primary);
+  font-size: var(--font-size-secondary);
+  font-style: normal;
+  color: var(--text-secondary);
+  max-width: 56ch;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding: var(--space-2) 0;
+  line-height: 1.4;
+  opacity: 0;
+  animation: fadeInAtmosphere 0.6s ease-out 0.2s forwards;
+}
+
+@keyframes fadeInAtmosphere {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Row: LLM text + thumbs after the text. Align thumbs to top so they never overlap wrapped lines. */
+.atmospheric-description-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  flex-wrap: nowrap;
+  padding: var(--space-2) 0;
+  margin-bottom: var(--space-2);
+}
+
+.atmospheric-description-row .atmospheric-description {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+/* Thumbs sit after the text, aligned to top of first line so they don't overlap when text wraps */
+.atmosphere-feedback {
+  display: inline-flex;
+  gap: var(--space-1);
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 1px;
+}
+
+/* Widest viewports: keep LLM line on one line */
+@media (min-width: 1200px) {
+  .atmospheric-description-row .atmospheric-description {
+    white-space: nowrap;
+  }
+}
+
+.feedback-btn {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  line-height: 1;
+  opacity: var(--opacity-dim);
+  transition: opacity 0.15s ease;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.feedback-btn-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.feedback-btn:hover {
+  opacity: var(--opacity-full);
+}
+
+.feedback-btn:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+/* After thumbs up: show "✓ Thanks" so user sees it was recorded */
+.feedback-dismissed {
+  font-size: var(--font-size-secondary);
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.feedback-dismissed--up {
+  opacity: var(--opacity-strong);
+}
+
+/* After thumbs down: we hide the LLM text and show this message */
+.atmosphere-down-message {
+  font-size: var(--font-size-secondary);
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.atmosphere-refresh {
+  font-family: var(--font-primary);
+  font-size: 0.75rem;
+  font-weight: var(--weight-medium);
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0.25rem 0 0 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.atmosphere-refresh:hover {
+  color: var(--text-secondary);
+}
+
+/* Fixed panel at bottom: Refresh + debug, semi-transparent, out of layout */
+.atmosphere-debug-panel {
+  position: fixed;
+  bottom: var(--space-4);
+  left: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  max-width: 22rem;
+  background: var(--overlay-on-light-hover);
+  border-radius: var(--radius-md);
+  z-index: 9998;
+}
+
+body.theme-dark .atmosphere-debug-panel {
+  background: var(--overlay-on-dark);
+}
+
+.atmosphere-debug {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+  pointer-events: none;
+}

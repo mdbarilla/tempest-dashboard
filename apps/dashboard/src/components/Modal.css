@@ -1,0 +1,126 @@
+/**
+ * Shared modal styles — backdrop blur, scrim, scale-in animation.
+ * Used by Modal.js; all modals should match these specs.
+ */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: var(--overlay-backdrop);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: modalOverlayFadeIn 0.2s ease-out;
+  will-change: opacity;
+  isolation: isolate;
+}
+
+.modal-overlay--responsive {
+  padding: 1.5rem;
+}
+
+/* Mobile: truly full-screen — no padding, no rounded corners */
+@media (max-width: 767px) {
+  .modal-overlay--responsive {
+    padding: 0;
+    align-items: stretch;
+    justify-content: stretch;
+  }
+
+  .modal-overlay--responsive .modal-panel {
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    border-radius: 0;
+    min-height: 100vh;
+    box-shadow: none;
+  }
+
+  .modal-overlay--responsive .modal-panel--xl {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+  }
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.modal-panel {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  background: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
+  animation: modalPanelScaleIn 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+  overflow: hidden;
+  transform-origin: center center;
+  box-shadow: var(--shadow-soft);
+  max-height: calc(100vh - 3rem);
+  will-change: transform, opacity;
+}
+
+/* Size variants — desktop/tablet */
+.modal-panel--sm {
+  max-width: min(400px, 96vw);
+}
+
+.modal-panel--md {
+  max-width: min(560px, 96vw);
+}
+
+.modal-panel--lg {
+  max-width: min(600px, 96vw);
+  max-height: min(80vh, 600px);
+}
+
+.modal-panel--xl {
+  width: 85%;
+  height: 85%;
+  max-width: 1100px;
+  max-height: 750px;
+}
+
+@keyframes modalOverlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalPanelScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Tablet and up: add border-radius, adjust padding */
+@media (min-width: 768px) {
+  .modal-overlay {
+    padding: 2.5rem;
+  }
+
+  .modal-panel {
+    border-radius: var(--radius-lg);
+    max-height: calc(100vh - 5rem);
+  }
+
+  .modal-panel--xl {
+    max-height: 750px;
+  }
+}
+

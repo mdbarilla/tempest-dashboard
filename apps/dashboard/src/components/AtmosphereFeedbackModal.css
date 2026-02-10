@@ -1,0 +1,266 @@
+/* AtmosphereFeedbackModal — content styles; Modal.js provides backdrop + panel */
+
+.atmosphere-feedback-modal {
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.atmosphere-feedback-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-on-dark);
+}
+
+.atmosphere-feedback-header span {
+  font-size: 0.9rem;
+  color: var(--text-on-dark-dim);
+}
+
+.atmosphere-feedback-close {
+  background: none;
+  border: none;
+  color: var(--text-on-dark-muted);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.atmosphere-feedback-close:hover {
+  background: var(--overlay-on-dark-hover);
+  color: var(--text-on-dark-primary);
+}
+
+.atmosphere-feedback-original {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: var(--overlay-on-dark);
+  border-radius: var(--radius-md);
+}
+
+.atmosphere-feedback-original-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-on-dark-muted);
+  margin-bottom: 0.25rem;
+}
+
+.atmosphere-feedback-original-text {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-on-dark-strong);
+  font-style: italic;
+}
+
+.atmosphere-feedback-body label,
+.atmosphere-feedback-label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-on-dark-dim);
+  margin-bottom: 0.5rem;
+}
+
+.atmosphere-feedback-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.atmosphere-feedback-category {
+  padding: 0.4rem 0.75rem;
+  min-height: 36px;
+  background: transparent;
+  border: 1px solid var(--text-primary);
+  border-radius: var(--radius-pill);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  opacity: var(--opacity-dim);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.atmosphere-feedback-category:hover {
+  opacity: var(--opacity-strong);
+  background: var(--overlay-on-dark);
+}
+
+.atmosphere-feedback-category.selected {
+  opacity: var(--opacity-full);
+  border-color: var(--text-primary);
+  color: var(--text-primary);
+  background: var(--overlay-on-dark-hover);
+}
+
+.atmosphere-feedback-category:disabled {
+  opacity: var(--opacity-muted);
+  cursor: not-allowed;
+}
+
+.atmosphere-feedback-rewrite {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--overlay-on-dark);
+  border: 1px solid var(--border-on-dark-strong);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 60px;
+  margin-bottom: 1rem;
+  box-sizing: border-box;
+}
+
+.atmosphere-feedback-rewrite::placeholder {
+  color: var(--text-on-dark-subtle);
+}
+
+.atmosphere-feedback-rewrite:disabled {
+  opacity: var(--opacity-dim);
+  cursor: not-allowed;
+}
+
+.atmosphere-feedback-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.atmosphere-feedback-submit,
+.atmosphere-feedback-cancel {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.atmosphere-feedback-submit {
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  border: 1px solid var(--text-primary);
+}
+
+.atmosphere-feedback-submit:hover:not(:disabled) {
+  background: var(--text-secondary);
+  border-color: var(--text-secondary);
+}
+
+.atmosphere-feedback-submit:disabled {
+  opacity: var(--opacity-muted);
+  cursor: not-allowed;
+}
+
+.atmosphere-feedback-cancel {
+  background: transparent;
+  border: 1px solid var(--text-secondary);
+  color: var(--text-secondary);
+  opacity: var(--opacity-muted);
+}
+
+.atmosphere-feedback-cancel:hover:not(:disabled) {
+  opacity: var(--opacity-strong);
+  border-color: var(--text-primary);
+  color: var(--text-primary);
+}
+
+.atmosphere-feedback-cancel:disabled {
+  opacity: var(--opacity-subtle);
+  cursor: not-allowed;
+}
+
+/* Light theme — panel inherits --bg-primary from Modal */
+
+body:not(.theme-dark) .atmosphere-feedback-header {
+  border-bottom-color: var(--border-on-light);
+}
+
+body:not(.theme-dark) .atmosphere-feedback-header span,
+body:not(.theme-dark) .atmosphere-feedback-label {
+  color: var(--text-on-light-muted);
+}
+
+body:not(.theme-dark) .atmosphere-feedback-close {
+  color: var(--text-on-light-dim);
+}
+
+body:not(.theme-dark) .atmosphere-feedback-close:hover {
+  background: var(--overlay-on-light);
+  color: var(--text-on-light-primary);
+}
+
+body:not(.theme-dark) .atmosphere-feedback-original {
+  background: var(--overlay-on-light);
+}
+
+body:not(.theme-dark) .atmosphere-feedback-original-text {
+  color: var(--text-on-light-strong);
+}
+
+body:not(.theme-dark) .atmosphere-feedback-category {
+  border: 1px solid var(--text-primary);
+  color: var(--text-primary);
+  opacity: var(--opacity-dim);
+}
+
+body:not(.theme-dark) .atmosphere-feedback-category:hover {
+  opacity: var(--opacity-strong);
+  background: var(--overlay-on-light-subtle);
+}
+
+body:not(.theme-dark) .atmosphere-feedback-category.selected {
+  opacity: var(--opacity-full);
+  background: var(--overlay-on-light-hover);
+}
+
+body:not(.theme-dark) .atmosphere-feedback-rewrite {
+  background: var(--overlay-on-light);
+  border-color: var(--border-on-light-strong);
+  color: var(--text-primary);
+}
+
+body:not(.theme-dark) .atmosphere-feedback-rewrite::placeholder {
+  color: var(--text-on-light-dim);
+}
+
+/* Mobile full-screen — Modal handles layout; adjust content padding */
+@media (max-width: 480px) {
+  .atmosphere-feedback-modal {
+    padding: 0;
+  }
+
+  .atmosphere-feedback-header {
+    padding: 1rem 1.5rem;
+    flex-shrink: 0;
+  }
+
+  .atmosphere-feedback-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 1.5rem;
+  }
+
+  .atmosphere-feedback-actions {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-light);
+    flex-shrink: 0;
+  }
+}

@@ -1,0 +1,255 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  /* Layout - The Golden Vertical */
+  --app-gutter: 3rem;           /* Master variable for left-alignment (48px desktop) */
+  --app-gutter-tablet: 2rem;    /* 32px tablet */
+  --app-gutter-mobile: 1.5rem;  /* 24px mobile */
+  --card-padding: 1.5rem;
+  --section-gap: 4rem;
+  --modal-controls-padding-y: 1rem;
+  --modal-controls-padding-bottom: 0.5rem; /* Half of padding-y — between icons and bottom */
+
+  /* Radius scale — modal/lg is 1rem; md/sm are half-step down */
+  --radius-lg: 1rem;   /* Modal, large cards */
+  --radius-md: 0.5rem; /* List cards, badges, icon buttons */
+  --radius-sm: 0.25rem; /* Buttons, inputs, subtle elements */
+  --radius-xs: 0.125rem; /* 2px — very subtle */
+  --radius-pill: 999px; /* Fully rounded (pills) */
+  --radius-full: 50%;   /* Circles */
+
+  /* Card tint — resting and hover states (theme-aware) */
+  --bg-card-tint: var(--bg-secondary);
+  --bg-card-hover: color-mix(in srgb, var(--bg-secondary) 88%, white);
+  --transition-hover: 0.2s ease;
+
+  /* Opacity scale */
+  --opacity-subtle: 0.3;
+  --opacity-muted: 0.5;
+  --opacity-dim: 0.6;
+  --opacity-strong: 0.8;
+  --opacity-full: 1;
+
+  /* Overlay/surface — subtle tints on light backgrounds */
+  --overlay-on-light-subtle: rgba(0, 0, 0, 0.03);
+  --overlay-on-light: rgba(0, 0, 0, 0.04);
+  --overlay-on-light-hover: rgba(0, 0, 0, 0.08);
+  --overlay-on-light-strong: rgba(0, 0, 0, 0.12);
+  --overlay-backdrop: rgba(0, 0, 0, 0.45);
+
+  /* Overlay on dark — glass/surface tints (modals, buttons on dark bg) */
+  --overlay-on-dark: rgba(255, 255, 255, 0.05);
+  --overlay-on-dark-subtle: rgba(255, 255, 255, 0.06);
+  --overlay-on-dark-hover: rgba(255, 255, 255, 0.1);
+  --overlay-on-dark-strong: rgba(255, 255, 255, 0.12);
+  --overlay-on-dark-strong-hover: rgba(255, 255, 255, 0.18);
+
+  /* Scrollbar (dark track) */
+  --scrollbar-thumb: rgba(255, 255, 255, 0.1);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.2);
+
+  /* Status/connection banner colors */
+  --status-offline: #8b3a3a;
+  --status-offline-dark: #7a3333;
+  --status-stale: #4a5d3f;
+  --status-stale-dark: #3f4f36;
+  --text-on-status: #fff;
+
+  /* Banner button (on colored status bg) */
+  --banner-btn-bg: rgba(255, 255, 255, 0.15);
+  --banner-btn-border: rgba(255, 255, 255, 0.3);
+  --banner-btn-bg-hover: rgba(255, 255, 255, 0.25);
+  --banner-btn-border-hover: rgba(255, 255, 255, 0.5);
+
+  /* Accent overlay (tinted surfaces) */
+  --accent-overlay: rgba(77, 125, 157, 0.2);
+  --accent-overlay-hover: rgba(77, 125, 157, 0.25);
+  --accent-overlay-subtle: rgba(77, 125, 157, 0.08);
+
+  /* Error/destructive */
+  --error: #dc2626;
+  --error-overlay: rgba(220, 38, 38, 0.1);
+
+  /* Modal/panel content — text and borders on dark surface (dark theme) */
+  --text-on-dark-subtle: rgba(255, 255, 255, 0.4);
+  --text-on-dark-muted: rgba(255, 255, 255, 0.5);
+  --text-on-dark-dim: rgba(255, 255, 255, 0.6);
+  --text-on-dark-strong: rgba(255, 255, 255, 0.85);
+  --text-on-dark-primary: rgba(255, 255, 255, 0.9);
+  --border-on-dark: rgba(255, 255, 255, 0.1);
+  --border-on-dark-strong: rgba(255, 255, 255, 0.15);
+
+  /* Modal/panel content — text and borders on light surface (light theme) */
+  --text-on-light-dim: rgba(0, 0, 0, 0.4);
+  --text-on-light-muted: rgba(0, 0, 0, 0.6);
+  --text-on-light-strong: rgba(0, 0, 0, 0.85);
+  --text-on-light-primary: rgba(0, 0, 0, 0.9);
+  --border-on-light: rgba(0, 0, 0, 0.1);
+  --border-on-light-strong: rgba(0, 0, 0, 0.15);
+
+  /* Spacing scale (8px base) */
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;   /* 8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-5: 1.5rem;   /* 24px */
+  --space-6: 2rem;     /* 32px */
+  --space-7: 3rem;     /* 48px */
+  --space-8: 4rem;     /* 64px */
+
+  /* Typography - Optical Adjustments */
+  --hero-optical-offset: -0.05em;  /* Fixes "12°" serif alignment */
+
+  /* Light theme - WCAG AA compliant */
+  --bg-primary: #f5f3f0;           /* Tan background restored */
+  --bg-secondary: #eae6e1;
+  --bg-card: #f5f3f0;
+  --bg-panel: rgba(255, 255, 255, 0.98);
+  --text-primary: #121214;         /* 21:1 contrast ratio (AAA) */
+  --text-secondary: #52525B;       /* 4.8:1 contrast ratio (AA) */
+  --text-muted: #999999;
+  --accent-blue: #4d7d9d;         /* steel/slate blue: dialed back from #3e6b8a, noticeable, not too blue */
+  --trendline-stroke: var(--accent-blue);  /* sparklines in metrics cards only; primary hourly uses --text-secondary */
+  --border-light: rgba(0, 0, 0, 0.12);
+  --shadow-soft: 0 2px 12px rgba(0, 0, 0, 0.04);
+
+  /* Icon Standards */
+  --stroke-width: 2px;
+  --ui-border: rgba(0, 0, 0, 0.12);
+
+  /* Typography */
+  --font-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  --font-size-secondary: 0.875rem; /* Timestamp, atmospheric summary, metrics secondary, footer-link, forecast-condition, coming-soon (secondary-tier text) */
+
+  /* Font weights */
+  --weight-light: 300;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+}
+
+/* Dark theme - activated between 8 PM and 6 AM - WCAG AA compliant */
+body.theme-dark {
+  --bg-primary: #1a1a2e;           /* Navy background restored */
+  --bg-secondary: #16213e;
+  --bg-card: #1a1a2e;
+  --bg-panel: var(--bg-card);
+  --text-primary: #FFFFFF;         /* 21:1 contrast ratio (AAA) */
+  --text-secondary: #A1A1AA;       /* 4.8:1 contrast ratio (AA) */
+  --text-muted: #71717A;
+  --accent-blue: #E4E4E7;          /* 7:1 contrast for icons/accents */
+  --trendline-stroke: var(--text-secondary);  /* sparklines in metrics cards; primary hourly also --text-secondary */
+  --border-light: rgba(255, 255, 255, 0.1);
+  --ui-border: rgba(255, 255, 255, 0.1);
+  --shadow-soft: 0 2px 12px rgba(0, 0, 0, 0.3);
+  --bg-card-tint: var(--bg-secondary);
+  --bg-card-hover: color-mix(in srgb, var(--bg-secondary) 96%, white);
+  --accent-overlay: rgba(228, 228, 231, 0.15);
+  --accent-overlay-hover: rgba(228, 228, 231, 0.22);
+  --accent-overlay-subtle: rgba(228, 228, 231, 0.08);
+}
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: var(--font-primary);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-y: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+/* Hide cursor after inactivity (for kiosk mode) */
+body.hide-cursor {
+  cursor: none;
+}
+
+/* Smooth transitions */
+* {
+  transition: color 0.3s ease, background-color 0.3s ease, transform 0.3s ease;
+}
+
+/* Scrollbar styling */
+body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+body {
+  scrollbar-width: none;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: var(--radius-sm);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+/* Condition-based tint (data-condition). Light theme only: background color/tint per condition.
+ * data-condition: lighten | darken | darken-more | stormy | neutral (App.js from weather condition or ?condition=).
+ * body.theme-dark overrides these when in dark mode.
+ * lighten: snow, sleet — lightest, cool blue-white.
+ * darken-more (#D4DEED): cloudy, rain, drizzle, freezing rain, storm.
+ * stormy (#b6c4d9): thunderstorm, fog, mist, haze — darker, WCAG AA.
+ * darken: for ?condition=darken override only. */
+:root[data-condition="lighten"] {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #f1f5f9;
+  --bg-card: #f8fafc;
+}
+
+:root[data-condition="darken"] {
+  --bg-primary: #a3b1be;
+  --bg-secondary: #b0bcc8;
+  --bg-card: #a3b1be;
+}
+
+:root[data-condition="darken-more"] {
+  --bg-primary: #D4DEED;
+  --bg-secondary: #c5d1e4;
+  --bg-card: #D4DEED;
+}
+
+:root[data-condition="stormy"] {
+  --bg-primary: #b6c4d9;
+  --bg-secondary: #a8b8d0;
+  --bg-card: #b6c4d9;
+}

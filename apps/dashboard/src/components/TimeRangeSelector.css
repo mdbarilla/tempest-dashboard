@@ -1,0 +1,73 @@
+/* Match menu button: stroke and colors (border-light, text-primary, same fill for active/hover) */
+.time-range-selector {
+  display: inline-flex;
+  gap: 0;
+  background: transparent;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.time-range-button {
+  flex: 0 0 auto;
+  padding: 0.5rem 1.25rem;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: var(--text-primary);
+  font-size: var(--font-size-secondary);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 44px; /* Touch target size */
+  position: relative;
+  white-space: nowrap;
+}
+
+.time-range-button:not(:last-child) {
+  border-right: 1px solid var(--border-light);
+}
+
+.time-range-button:hover:not(:disabled) {
+  background: var(--overlay-on-light);
+}
+
+.time-range-button.active {
+  font-weight: var(--weight-semibold);
+}
+
+.time-range-button:disabled {
+  opacity: var(--opacity-muted);
+  cursor: not-allowed;
+}
+
+.time-range-button:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+}
+
+/* Light theme: match menu button (precip-menu-btn / condition-menu-btn) */
+body:not(.theme-dark) .time-range-selector {
+  border-color: var(--border-light);
+}
+
+body:not(.theme-dark) .time-range-button:not(:last-child) {
+  border-right-color: var(--border-light);
+}
+
+body:not(.theme-dark) .time-range-button.active {
+  background: var(--overlay-on-light-hover);
+}
+
+body:not(.theme-dark) .time-range-button:hover:not(:disabled) {
+  background: var(--overlay-on-light);
+}
+
+/* Dark theme: match menu button */
+body.theme-dark .time-range-button.active {
+  background: var(--overlay-on-dark-strong);
+}
+
+body.theme-dark .time-range-button:hover:not(:disabled) {
+  background: var(--overlay-on-dark-subtle);
+}

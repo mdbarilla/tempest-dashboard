@@ -1,0 +1,15 @@
+[Unit]
+Description=Tempest AI weather bridge (UDP 50222 + Ollama, HTTP :5000)
+After=network.target
+
+[Service]
+Type=simple
+User=mbarilla
+Group=mbarilla
+WorkingDirectory=/home/mbarilla/weather_bridge
+ExecStart=/home/mbarilla/weather_bridge/venv/bin/python3 /home/mbarilla/weather_bridge/weather_bridge.py
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

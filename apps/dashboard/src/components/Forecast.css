@@ -1,0 +1,317 @@
+.forecast-section {
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-light);
+  margin-top: 0;
+}
+
+.forecast-container {
+  padding: 0;
+  overflow: hidden;
+}
+
+.forecast-layout {
+  display: flex;
+  flex-direction: column;
+}
+
+.forecast-header {
+  padding: 2.5rem 3rem 1.5rem;
+}
+
+.forecast-header h2 {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.forecast-grid {
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0 3rem 1.5rem;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  /* Hide scrollbars */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+/* Hide scrollbar for Chrome/Safari */
+.forecast-grid::-webkit-scrollbar {
+  display: none;
+  height: 0;
+  width: 0;
+}
+
+/* Day cards with icon in upper right */
+.forecast-day-card {
+  position: relative;
+  background: transparent;
+  padding: 2rem;
+  border-right: 1px solid var(--border-light);
+  min-height: 160px;
+  flex: 0 0 auto;
+  min-width: 200px;
+  /* Staggered entrance animation */
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.forecast-day-card:hover {
+  background: transparent;
+  transform: none;
+}
+
+body.theme-dark .forecast-day-card:hover {
+  background: transparent;
+}
+
+/* Stagger delay: 30ms per card for 10-day forecast */
+.forecast-day-card:nth-child(1) { animation-delay: 0ms; }
+.forecast-day-card:nth-child(2) { animation-delay: 30ms; }
+.forecast-day-card:nth-child(3) { animation-delay: 60ms; }
+.forecast-day-card:nth-child(4) { animation-delay: 90ms; }
+.forecast-day-card:nth-child(5) { animation-delay: 120ms; }
+.forecast-day-card:nth-child(6) { animation-delay: 150ms; }
+.forecast-day-card:nth-child(7) { animation-delay: 180ms; }
+.forecast-day-card:nth-child(8) { animation-delay: 210ms; }
+.forecast-day-card:nth-child(9) { animation-delay: 240ms; }
+.forecast-day-card:nth-child(10) { animation-delay: 270ms; }
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.forecast-day-card:first-child {
+  padding-left: 0;
+}
+
+.forecast-day-card:last-child {
+  border-right: none;
+}
+
+/* Icon positioned in upper right */
+.forecast-icon {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  opacity: 1 !important;
+  color: var(--text-primary) !important;
+}
+
+.forecast-day-card:hover .forecast-icon {
+  opacity: 1 !important;
+}
+
+/* Left-aligned content */
+.forecast-content {
+  text-align: left;
+  position: relative;
+  padding-right: 3rem; /* Space for icon */
+}
+
+.forecast-day-name {
+  font-size: 1rem;
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+}
+
+.forecast-condition {
+  font-size: var(--font-size-secondary);
+  font-weight: var(--weight-regular);
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
+
+.forecast-temps {
+  font-family: 'Fraunces', var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.forecast-temps .temp-high {
+  color: var(--text-primary);
+}
+
+.forecast-temps .temp-low {
+  color: var(--text-secondary);
+  opacity: var(--opacity-strong);
+}
+
+.forecast-temps .temp-separator {
+  color: var(--text-secondary);
+  opacity: var(--opacity-muted);
+}
+
+.forecast-precip {
+  font-size: 0.75rem;
+  font-weight: var(--weight-medium);
+  color: var(--accent-blue);
+  margin-top: 0.5rem;
+  opacity: var(--opacity-strong);
+}
+
+/* Responsive */
+/* Tablet and Desktop: Side-by-side header + cards layout */
+@media (min-width: 768px) {
+  .forecast-layout {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .forecast-header {
+    flex-shrink: 0;
+    padding: 2.5rem 0 1.5rem 3rem;
+    width: 140px;
+  }
+
+  .forecast-header h2 {
+    font-size: 1rem;
+    writing-mode: horizontal-tb;
+    line-height: 1.5;
+  }
+
+  .forecast-grid {
+    flex: 1;
+    padding: 1.5rem 3rem 1.5rem 2rem;
+    overflow-x: auto;
+  }
+
+  .forecast-day-card {
+    min-width: 140px;
+    padding: 1.25rem;
+    min-height: 120px;
+  }
+
+  .forecast-day-card:first-child {
+    padding-left: 0;
+  }
+
+  .forecast-icon {
+    top: 1.25rem;
+    right: 1.25rem;
+  }
+
+  .forecast-day-name {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .forecast-condition {
+    font-size: 0.75rem;
+    margin-bottom: 0.65rem;
+  }
+
+  .forecast-temps {
+    font-size: 1.35rem;
+  }
+
+  .forecast-precip {
+    font-size: 0.8rem;
+  }
+}
+
+/* Large desktop: slightly bigger cards */
+@media (min-width: 1280px) {
+  .forecast-header {
+    width: 160px;
+    padding-left: 3rem;
+  }
+
+  .forecast-header h2 {
+    font-size: 1.125rem;
+  }
+
+  .forecast-day-card {
+    min-width: 160px;
+    padding: 1.5rem;
+    min-height: 130px;
+  }
+
+  .forecast-temps {
+    font-size: 1.5rem;
+  }
+
+  .forecast-day-name {
+    font-size: 0.95rem;
+  }
+
+  .forecast-condition {
+    font-size: 0.875rem;
+  }
+
+  .forecast-precip {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .forecast-header {
+    padding: 1.5rem 2rem 1.25rem;
+  }
+
+  .forecast-grid {
+    padding: 0 2rem 1.25rem;
+  }
+
+  .forecast-day-card {
+    min-width: 160px;
+    padding: 1.5rem;
+  }
+
+  .forecast-day-card:first-child {
+    padding-left: 0;
+  }
+
+  .forecast-icon {
+    top: 1.5rem;
+    right: 1.5rem;
+    opacity: 1 !important;
+  }
+
+  .forecast-temps {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .forecast-header {
+    padding: 1.25rem 1.5rem 1rem;
+  }
+
+  .forecast-grid {
+    padding: 0 1.5rem 1rem;
+  }
+
+  .forecast-day-card {
+    min-width: 140px;
+    padding: 1.25rem;
+  }
+
+  .forecast-day-card:first-child {
+    padding-left: 0;
+  }
+
+  .forecast-temps {
+    font-size: 1.375rem;
+  }
+
+  .forecast-condition {
+    font-size: 0.8rem;
+  }
+}

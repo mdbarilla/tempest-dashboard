@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=Weather Dashboard
+Exec=/home/mbarilla/kiosk-start.sh
+X-GNOME-Autostart-enabled=true
