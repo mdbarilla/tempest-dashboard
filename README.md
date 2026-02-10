@@ -10,18 +10,16 @@ A modern, beautiful weather dashboard for Raspberry Pi, powered by the Tempest W
 **Live example:** [towerhill.app](https://towerhill.app)
 
 ## Features
-
-- **Beautiful Design** — Boutique weather app aesthetics with golden vertical alignment, design tokens (radius, opacity, colors), and consistent 48px gutters (32px tablet, 24px mobile)
+- **Optimized for Pi** — Runs on Raspberry Pi 4 in kiosk mode; Chromium-friendly; swap and GPU tuning documented
+- **Beautiful Design** — Boutique weather app aesthetics with crisp typography, dynamic theming, golden vertical alignment, design tokens (radius, opacity, colors, spacing)
 - **Real-time Weather** — Current conditions with feels-like temperature; hourly and 10-day forecast; condition corrections (override observed conditions, persists 30 minutes)
 - **Historical Trends** — 6-hour sparklines for pressure, humidity, wind, and precipitation; 3-day and 7-day metric charts; analytics view with time-range selector
 - **Metrics Dashboard** — Barometric pressure, humidity with dew point, wind speed and gusts, precipitation tracking, solar radiation, sunrise/sunset; tappable cards with metric detail modals
-- **Manual Precipitation Logging** — Log snow, rain, sleet, hail with amounts; view and edit history; graph and time-range views
+- **Manual Precipitation Logging** — Manually og snow, rain, sleet, hail with amounts; view and edit history; graph and time-range views
 - **NWS Integration** — U.S. National Weather Service alerts and storm warnings with detail modal
 - **Optional LLM “Atmosphere”** — Short natural-language summary of conditions (via optional weather bridge service); thumbs up/down feedback
 - **Dark/Light Mode** — Automatic theme switching based on time of day (sunrise/sunset); manual theme toggle
-- **Optimized for Pi** — Runs on Raspberry Pi 4 in kiosk mode; Chromium-friendly; swap and GPU tuning documented
 - **Accessibility** — WCAG AA/AAA contrast (21:1); 2px stroke icons; staggered entrance animations
-- **Optional Google Home** — “Hey Google, ask Tempest what’s the weather” via Dialogflow webhook
 
 ## Quick Start
 
