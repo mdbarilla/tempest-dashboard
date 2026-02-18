@@ -57,7 +57,6 @@ function AskMessageChart({ metric, hours }) {
   );
 }
 
-const VALID_METRICS = ['temperature', 'wind', 'humidity', 'pressure', 'precipitation', 'solar', 'uv', 'conditions'];
 const METRIC_ALIASES = {
   temp: 'temperature', temperature: 'temperature',
   wind: 'wind', humidity: 'humidity', pressure: 'pressure',
