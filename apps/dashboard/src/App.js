@@ -7,7 +7,10 @@ import CurrentWeather from './components/CurrentWeather';
 import Forecast from './components/Forecast';
 import Metrics from './components/Metrics';
 import ConditionsList from './pages/ConditionsList';
+import HistoryPage from './pages/HistoryPage';
+import ChatPage from './pages/ChatPage';
 import MetricDetailView from './pages/MetricDetailView';
+import BottomNav from './components/BottomNav';
 import './styles/App.css';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api/weather';
@@ -16,6 +19,40 @@ const REFRESH_INTERVAL = 60000; // 60 seconds
 /** True when the URL is /conditions/:metric (metric detail modal open). */
 function isMetricDetailPath(pathname) {
   return /^\/conditions\/[^/]+$/.test(pathname);
+}
+
+/** Footer shown only on dashboard (path /). */
+function FooterOrNull({ themeOverride, toggleTheme }) {
+  const location = useLocation();
+  if (location.pathname !== '/' && location.pathname !== '') return null;
+  return (
+    <footer className="footer">
+      <a
+        href="https://tempestwx.com/station/204768/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="footer-link"
+      >
+        <span>Tempest Station #204768 • Wayland, MA</span>
+        <svg viewBox="0 0 24 24">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+          <polyline points="15 3 21 3 21 9" />
+          <line x1="10" y1="14" x2="21" y2="3" />
+        </svg>
+      </a>
+      <div className="footer-actions">
+        <button onClick={toggleTheme} className="theme-toggle" title={
+          themeOverride === null ? 'Theme: Auto' :
+          themeOverride === 'dark' ? 'Theme: Dark' : 'Theme: Light'
+        }>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" fill="none" />
+            <path d="M12 2 A10 10 0 0 1 12 22 Z" fill="currentColor" stroke="none" />
+          </svg>
+        </button>
+      </div>
+    </footer>
+  );
 }
 
 /** Runs refresh interval only when metric detail modal is closed; refreshes once on modal close. */
@@ -40,6 +77,12 @@ function RefreshManager({ fetchWeather }) {
     }
     prevPathRef.current = pathname;
   }, [pathname, fetchWeather]);
+
+  // Track which of Dashboard/Currently was last active for History/Ask nav
+  useEffect(() => {
+    if (pathname === '/') localStorage.setItem('lastMainView', 'dashboard');
+    else if (pathname === '/conditions') localStorage.setItem('lastMainView', 'currently');
+  }, [pathname]);
 
   return null;
 }
@@ -522,6 +565,30 @@ function App() {
               element={<MetricDetailRoute />}
             />
             <Route
+              path="/history/:date"
+              element={
+                <div className="route-content">
+                  <HistoryPage lastUpdate={lastUpdate} />
+                </div>
+              }
+            />
+            <Route
+              path="/history"
+              element={
+                <div className="route-content">
+                  <HistoryPage lastUpdate={lastUpdate} />
+                </div>
+              }
+            />
+            <Route
+              path="/chat"
+              element={
+                <div className="route-content">
+                  <ChatPage lastUpdate={lastUpdate} />
+                </div>
+              }
+            />
+            <Route
               path="/conditions"
               element={
                 <div className="route-content">
@@ -544,32 +611,8 @@ function App() {
           </Routes>
         </main>
 
-        <footer className="footer">
-          <a
-            href="https://tempestwx.com/station/204768/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="footer-link"
-          >
-            <span>Tempest Station #204768 • Wayland, MA</span>
-            <svg viewBox="0 0 24 24">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-              <polyline points="15 3 21 3 21 9" />
-              <line x1="10" y1="14" x2="21" y2="3" />
-            </svg>
-          </a>
-          <div className="footer-actions">
-            <button onClick={toggleTheme} className="theme-toggle" title={
-              themeOverride === null ? 'Theme: Auto' :
-              themeOverride === 'dark' ? 'Theme: Dark' : 'Theme: Light'
-            }>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" fill="none" />
-                <path d="M12 2 A10 10 0 0 1 12 22 Z" fill="currentColor" stroke="none" />
-              </svg>
-            </button>
-          </div>
-        </footer>
+        <FooterOrNull themeOverride={themeOverride} toggleTheme={toggleTheme} />
+        <BottomNav />
       </div>
     </div>
     </BrowserRouter>

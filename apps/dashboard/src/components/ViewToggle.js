@@ -18,8 +18,8 @@ function ViewToggle() {
     else navigate('/conditions');
   };
 
-  const label = isConditions ? 'Dashboard' : 'List';
-  const title = isConditions ? 'Dashboard (overview)' : 'Conditions list';
+  const label = isConditions ? 'Dashboard' : 'Currently';
+  const title = isConditions ? 'Dashboard (overview)' : 'Current conditions';
 
   return (
     <button

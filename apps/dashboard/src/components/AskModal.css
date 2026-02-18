@@ -11,6 +11,47 @@
   flex: 1;
 }
 
+.ask-modal--embedded {
+  min-height: var(--ask-modal-min-height);
+  overflow: hidden;
+}
+
+@media (max-width: 767px) {
+  .ask-modal--embedded .ask-modal-header {
+    display: none;
+  }
+
+  .ask-modal--embedded .ask-modal-footer {
+    position: fixed;
+    bottom: var(--bottom-nav-height);
+    left: 0;
+    right: 0;
+    z-index: 100;
+    margin: 0;
+    border-radius: 0;
+  }
+
+  .ask-modal--embedded .ask-modal-list {
+    padding-bottom: var(--ask-footer-mobile-height);
+  }
+
+  /* Carousel bleeds to both screen edges; padding gives first/last chip breathing room */
+  .ask-modal--embedded .ask-quick-replies {
+    margin-left: calc(-1 * var(--app-gutter-mobile));
+    margin-right: calc(-1 * var(--app-gutter-mobile));
+    padding-left: var(--app-gutter-mobile);
+    padding-right: var(--app-gutter-mobile);
+  }
+}
+
+@media (min-width: 768px) {
+  .ask-modal--embedded {
+    background: var(--bg-card-tint);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+  }
+}
+
 /* Desktop (xl panel): modal has fixed size; chat list scrolls inside, does not expand panel */
 @media (min-width: 768px) {
   .ask-modal {
@@ -52,11 +93,23 @@
   color: var(--text-primary);
 }
 
+.ask-modal-header-text {
+  flex: 1;
+  min-width: 0;
+}
+
 .ask-modal-title {
   font-size: 1.25rem;
   font-weight: var(--weight-semibold);
   color: var(--text-primary);
   margin: 0;
+}
+
+.ask-modal-subhead {
+  font-size: var(--font-size-secondary);
+  color: var(--text-secondary);
+  margin: var(--space-1) 0 0;
+  line-height: 1.4;
 }
 
 .ask-modal-close {
@@ -96,28 +149,38 @@ body.theme-dark .ask-modal-close:hover {
 .ask-message {
   max-width: 90%;
   padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
-  animation: askMessageEnter 0.25s ease-out;
+  animation: askMessageEnter 0.35s ease-out backwards;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
+/* User bubble: tail at bottom-right */
 .ask-message--user {
   align-self: flex-end;
   background: var(--overlay-on-light-strong);
   color: var(--text-primary);
+  border: none;
+  outline: none;
+  border-radius: var(--radius-lg) var(--radius-lg) var(--radius-xs) var(--radius-lg);
 }
 
 body.theme-dark .ask-message--user {
-  background: var(--overlay-on-dark-strong);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
 }
 
+/* Assistant bubble: tail at bottom-left; brighter than user in both themes */
 .ask-message--assistant {
   align-self: flex-start;
-  background: var(--overlay-on-light);
+  background: rgba(255, 255, 255, 0.85);
   color: var(--text-primary);
+  border: none;
+  outline: none;
+  border-radius: var(--radius-lg) var(--radius-lg) var(--radius-lg) var(--radius-xs);
 }
 
 body.theme-dark .ask-message--assistant {
-  background: var(--overlay-on-dark);
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
 }
 
 .ask-message--empty {
@@ -149,7 +212,7 @@ body.theme-dark .ask-message--assistant {
 
 .ask-message-chart {
   margin-top: var(--space-3);
-  height: 220px;
+  height: var(--chart-height);
   min-height: 180px;
   width: 100%;
 }
@@ -167,7 +230,7 @@ body.theme-dark .ask-message--assistant {
 
 .ask-modal-footer {
   flex-shrink: 0;
-  padding: var(--space-4) var(--app-gutter-mobile);
+  padding: var(--space-4) var(--app-gutter-mobile) var(--space-6);
   border-top: 1px solid var(--border-light);
   background: var(--bg-primary);
 }
@@ -175,7 +238,7 @@ body.theme-dark .ask-message--assistant {
 .ask-form {
   display: flex;
   gap: var(--space-2);
-  margin-top: var(--space-3);
+  margin-top: var(--space-4);
 }
 
 .ask-input {
@@ -183,9 +246,9 @@ body.theme-dark .ask-message--assistant {
   font-family: var(--font-primary);
   font-size: 0.9375rem;
   color: var(--text-primary);
-  background: var(--overlay-on-light);
+  background: var(--ask-input-fill);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-pill);
   padding: var(--space-2) var(--space-3);
   min-height: 44px;
 }
@@ -200,7 +263,7 @@ body.theme-dark .ask-message--assistant {
 }
 
 body.theme-dark .ask-input {
-  background: var(--overlay-on-dark);
+  background: var(--ask-input-fill);
   border-color: var(--border-on-dark);
   color: var(--text-on-dark-primary);
 }
@@ -209,18 +272,18 @@ body.theme-dark .ask-input {
   font-family: var(--font-primary);
   font-size: 0.875rem;
   font-weight: var(--weight-medium);
-  color: var(--text-primary);
-  background: var(--overlay-on-light-strong);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
+  color: var(--text-on-status);
+  background: var(--accent-blue);
+  border: none;
+  border-radius: var(--radius-pill);
   padding: var(--space-2) var(--space-4);
   min-height: 44px;
   cursor: pointer;
-  transition: background var(--transition-hover), border-color var(--transition-hover);
+  transition: opacity var(--transition-hover), filter var(--transition-hover);
 }
 
 .ask-submit:hover:not(:disabled) {
-  background: var(--overlay-on-light-hover);
+  filter: brightness(1.08);
 }
 
 .ask-submit:disabled {
@@ -229,19 +292,35 @@ body.theme-dark .ask-input {
 }
 
 body.theme-dark .ask-submit {
-  background: var(--overlay-on-dark-strong);
-  border-color: var(--border-on-dark);
-  color: var(--text-on-dark-primary);
+  background: var(--accent-blue);
+  color: var(--bg-primary);
 }
 
 body.theme-dark .ask-submit:hover:not(:disabled) {
-  background: var(--overlay-on-dark-hover);
+  filter: brightness(1.1);
+}
+
+.ask-quick-title {
+  font-size: var(--font-size-nav);
+  font-weight: var(--weight-medium);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 var(--space-2);
 }
 
 .ask-quick-replies {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: var(--space-2);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: var(--space-1);
+}
+
+.ask-quick-replies::-webkit-scrollbar {
+  display: none;
 }
 
 .ask-quick-reply {
@@ -253,6 +332,8 @@ body.theme-dark .ask-submit:hover:not(:disabled) {
   border: none;
   border-radius: var(--radius-pill);
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
   transition: background var(--transition-hover), color var(--transition-hover);
 }
 

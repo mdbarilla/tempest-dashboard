@@ -51,6 +51,11 @@ class WeatherDatabase {
         )
       `);
 
+      // Add conditions column for historical hourly view (1.5.0)
+      this.db.run(`ALTER TABLE observations ADD COLUMN conditions TEXT`, (err) => {
+        if (err && !/duplicate column name/i.test(err.message)) console.error('observations conditions:', err);
+      });
+
       // Create index on timestamp for faster queries
       this.db.run(`
         CREATE INDEX IF NOT EXISTS idx_timestamp
@@ -114,6 +119,7 @@ class WeatherDatabase {
    */
   saveObservation(data) {
     return new Promise((resolve, reject) => {
+      const conditions = (data.conditions && typeof data.conditions === 'string') ? data.conditions : null;
       const sql = `
         INSERT OR REPLACE INTO observations (
           timestamp, temp_celsius, temp_fahrenheit,
@@ -121,8 +127,8 @@ class WeatherDatabase {
           humidity, wind_speed, wind_gust, wind_direction,
           pressure_mb, pressure_inhg, uv_index,
           solar_radiation, precip_today, precip_last_hour,
-          lightning_strikes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          lightning_strikes, conditions
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       const params = [
@@ -141,7 +147,8 @@ class WeatherDatabase {
         data.solarRadiation,
         data.precipitation.today,
         data.precipitation.lastHour,
-        data.lightning.strikeCount
+        data.lightning.strikeCount,
+        conditions
       ];
 
       this.db.run(sql, params, function(err) {
@@ -174,6 +181,28 @@ class WeatherDatabase {
       this.db.all(sql, [cutoffUnix, endUnix, limit], (err, rows) => {
         if (err) reject(err);
         else resolve(rows || []);
+      });
+    });
+  }
+
+  /**
+   * Get the most recent observation (for "current" Ask intent).
+   * @param {number} maxAgeSeconds - Only consider observations from last N seconds (default 2 hours).
+   * @returns {Promise<object|null>} Latest observation or null.
+   */
+  getLatestObservation(maxAgeSeconds = 7200) {
+    return new Promise((resolve, reject) => {
+      const now = Math.floor(Date.now() / 1000);
+      const cutoff = now - maxAgeSeconds;
+      const sql = `
+        SELECT * FROM observations
+        WHERE timestamp >= ?
+        ORDER BY timestamp DESC
+        LIMIT 1
+      `;
+      this.db.get(sql, [cutoff], (err, row) => {
+        if (err) reject(err);
+        else resolve(row || null);
       });
     });
   }
@@ -215,11 +244,17 @@ class WeatherDatabase {
           MAX(temp_celsius) as max_temp_c,
           AVG(temp_celsius) as avg_temp_c,
           AVG(humidity) as avg_humidity,
+          MIN(humidity) as min_humidity,
+          MAX(humidity) as max_humidity,
           MAX(wind_gust) as max_wind_gust,
+          MIN(wind_speed) as min_wind_speed,
           AVG(wind_speed) as avg_wind_speed,
           SUM(precip_today) as total_precipitation,
           MAX(uv_index) as max_uv,
+          MAX(solar_radiation) as max_solar_radiation,
           AVG(pressure_mb) as avg_pressure,
+          MIN(pressure_mb) as min_pressure_mb,
+          MAX(pressure_mb) as max_pressure_mb,
           SUM(lightning_strikes) as total_lightning_strikes
         FROM observations
         WHERE DATE(created_at) BETWEEN DATE(?) AND DATE(?)
@@ -375,6 +410,24 @@ class WeatherDatabase {
   }
 
   /**
+   * Get condition corrections within a timestamp range (for hourly history overlay).
+   * Returns the most recent correction per hour bucket so edits show in the history table.
+   */
+  getCorrectionsForTimestampRange(startUnix, endUnix) {
+    return new Promise((resolve, reject) => {
+      const sql = `
+        SELECT * FROM condition_corrections
+        WHERE timestamp >= ? AND timestamp <= ?
+        ORDER BY created_at DESC
+      `;
+      this.db.all(sql, [startUnix, endUnix], (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows || []);
+      });
+    });
+  }
+
+  /**
    * Get all condition corrections for analysis
    */
   getAllCorrections(limit = 100) {
@@ -481,6 +534,23 @@ class WeatherDatabase {
         } else {
           resolve(rows);
         }
+      });
+    });
+  }
+
+  /**
+   * Get manual precipitation entries within a timestamp range (for hourly history overlay).
+   */
+  getManualPrecipitationByTimestampRange(startUnix, endUnix) {
+    return new Promise((resolve, reject) => {
+      const sql = `
+        SELECT * FROM manual_precipitation
+        WHERE timestamp >= ? AND timestamp <= ?
+        ORDER BY timestamp ASC
+      `;
+      this.db.all(sql, [startUnix, endUnix], (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows || []);
       });
     });
   }

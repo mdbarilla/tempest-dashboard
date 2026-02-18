@@ -1,0 +1,294 @@
+/**
+ * History page - Wunderground-style hourly table
+ * Uses design tokens from index.css
+ */
+@import '../styles/page-header.css';
+
+.history-page {
+  padding: var(--app-gutter-mobile) var(--app-gutter-mobile) 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 767px) {
+  .history-table-wrap {
+    margin-left: calc(-1 * var(--app-gutter-mobile));
+    margin-right: calc(-1 * var(--app-gutter-mobile));
+    width: calc(100% + 2 * var(--app-gutter-mobile));
+  }
+}
+
+@media (min-width: 768px) {
+  .history-page {
+    padding: var(--app-gutter-tablet) var(--app-gutter-tablet) 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  .history-page {
+    padding: var(--app-gutter) var(--app-gutter) 0;
+  }
+}
+
+/* Header: title left, date picker right */
+.history-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: 0;
+  padding-bottom: var(--space-4);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--bg-primary);
+}
+
+.history-header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--border-light);
+}
+
+@media (max-width: 767px) {
+  .history-header::after {
+    left: calc(-1 * var(--app-gutter-mobile));
+    right: calc(-1 * var(--app-gutter-mobile));
+  }
+}
+
+.history-header .history-header-inner {
+  flex: 1;
+  min-width: 0;
+}
+
+.history-date-wrap {
+  flex-shrink: 0;
+}
+
+.history-date-input {
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-primary);
+  font-size: var(--font-size-base);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* Native date input: use tokens for consistent theming */
+.history-date-input::-webkit-datetime-edit,
+.history-date-input::-webkit-datetime-edit-fields-wrapper,
+.history-date-input::-webkit-datetime-edit-text,
+.history-date-input::-webkit-datetime-edit-month-field,
+.history-date-input::-webkit-datetime-edit-day-field,
+.history-date-input::-webkit-datetime-edit-year-field {
+  color: var(--text-primary);
+}
+
+.history-date-input::-webkit-calendar-picker-indicator {
+  opacity: var(--opacity-dim);
+}
+
+body.theme-dark .history-date-input::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: var(--opacity-strong);
+}
+
+.history-loading,
+.history-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-8);
+  color: var(--text-secondary);
+}
+
+.history-error {
+  color: var(--error);
+}
+
+.history-table-wrap {
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--bg-card);
+  flex: 1;
+  min-height: 0;
+}
+
+@media (max-width: 767px) {
+  .history-table-wrap {
+    padding: 0;
+  }
+}
+
+@media (min-width: 768px) {
+  .history-table-wrap {
+    padding: var(--space-2);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    margin-top: var(--space-4);
+  }
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 var(--space-row);
+  font-size: var(--font-size-secondary);
+}
+
+/* Mobile: collapse spacing, use border-bottom rules between rows */
+@media (max-width: 767px) {
+  .history-table {
+    border-spacing: 0;
+  }
+
+  .history-table tbody td {
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .history-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* Left-align first cell with page header padding */
+  .history-table th:first-child,
+  .history-table td:first-child {
+    padding-left: var(--app-gutter-mobile);
+  }
+}
+
+.history-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.history-table th {
+  background: color-mix(in srgb, var(--bg-secondary) 45%, var(--text-primary));
+  color: var(--text-on-dark-primary);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+}
+
+body.theme-dark .history-table th {
+  background: var(--bg-secondary);
+  color: var(--text-on-dark-primary);
+}
+
+.history-table th,
+.history-table td {
+  padding: var(--space-3) var(--space-3);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.history-table tbody tr {
+  background: var(--bg-card);
+  animation: historyRowEnter 0.35s ease-out backwards;
+}
+
+@keyframes historyRowEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.history-table tbody tr:hover {
+  background: var(--bg-card-hover);
+}
+
+.history-table tbody tr.history-row-forecast {
+  color: var(--text-muted);
+}
+
+.history-table tbody tr.history-row-forecast .history-cell-temp,
+.history-table tbody tr.history-row-forecast .history-cell-feels {
+  color: var(--text-muted);
+}
+
+.history-table tbody tr.history-row-forecast .history-condition-icon {
+  opacity: var(--opacity-muted);
+}
+
+.history-cell-time {
+  white-space: nowrap;
+}
+
+.history-cell-conditions {
+  white-space: nowrap;
+  min-width: var(--history-conditions-min-width);
+}
+
+.history-conditions-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: nowrap;
+  vertical-align: middle;
+}
+
+.history-conditions-inner .history-condition-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.history-conditions-inner > span {
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.history-cell-conditions .history-cell-empty {
+  display: inline-block;
+  line-height: 1;
+}
+
+.history-cell-wind {
+  white-space: nowrap;
+}
+
+.history-cell-temp {
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.history-cell-feels {
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+}
+
+.history-edited-badge {
+  font-size: 0.65rem;
+  font-weight: var(--weight-medium);
+  color: var(--text-muted);
+  background: var(--overlay-on-light);
+  border-radius: var(--radius-sm);
+  padding: 1px 4px;
+  line-height: 1;
+  white-space: nowrap;
+  margin-left: var(--space-1);
+  vertical-align: middle;
+}
+
+body.theme-dark .history-edited-badge {
+  background: var(--overlay-on-dark);
+}

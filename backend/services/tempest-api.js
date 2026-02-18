@@ -288,8 +288,8 @@ class TempestAPI {
           celsius: hour.air_temperature,
           fahrenheit: (hour.air_temperature * 9/5) + 32
         },
-        conditions: hour.conditions,
-        icon: hour.icon,
+        conditions: hour.conditions || hour.condition,
+        icon: hour.icon ?? (hour.icon_num != null ? hour.icon_num : undefined),
         precipProbability: hour.precip_probability,
         humidity: hour.relative_humidity,
         wind: {
@@ -302,9 +302,9 @@ class TempestAPI {
     // Format daily forecast
     if (data.forecast && data.forecast.daily) {
       result.daily = data.forecast.daily.map(day => ({
-        date: day.day_start_local,
-        conditions: day.conditions,
-        icon: day.icon,
+        date: day.day_start_local || day.day_start,
+        conditions: day.conditions || day.condition,
+        icon: day.icon ?? (day.icon_num != null ? day.icon_num : undefined),
         temperature: {
           high: {
             celsius: day.air_temp_high,

@@ -257,8 +257,6 @@ router.post('/atmosphere/feedback', async (req, res) => {
       receivedAt: new Date().toISOString()
     };
     await fs.appendFile(filePath, JSON.stringify(record) + '\n');
-    if (process.env.NODE_ENV !== 'production') {
-    }
     res.json({ success: true, stored: true });
   } catch (e) {
     console.error('Atmosphere feedback write error:', e);
@@ -296,6 +294,258 @@ router.get('/historical', async (req, res) => {
     });
   }
 });
+
+/**
+ * GET /api/weather/hourly/:date
+ * Get 24-hour weather table for a specific date (Wunderground-style history view).
+ * Merges observations (past) with forecast (future) for today.
+ * Params: date in YYYY-MM-DD format.
+ */
+router.get('/hourly/:date', async (req, res) => {
+  try {
+    const { date } = req.params;
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid date. Use YYYY-MM-DD format.'
+      });
+    }
+
+    const [y, m, d] = date.split('-').map(Number);
+    const dayStart = new Date(y, m - 1, d, 0, 0, 0);
+    const dayEnd = new Date(y, m - 1, d, 23, 59, 59);
+    const startUnix = Math.floor(dayStart.getTime() / 1000);
+    const endUnix = Math.floor(dayEnd.getTime() / 1000);
+    const nowUnix = Math.floor(Date.now() / 1000);
+
+    const rawObs = await db.getObservationsByTimestampRange(startUnix, endUnix, 5000);
+    const byHour = new Map();
+    for (const obs of rawObs) {
+      const hourKey = Math.floor(Number(obs.timestamp) / 3600) * 3600;
+      if (!byHour.has(hourKey)) {
+        byHour.set(hourKey, {
+          count: 0, temp_f: 0, feels_f: 0, humidity: 0, wind: 0, wind_gust_max: null,
+          pressure: 0, precip: null, solar: 0, uv: 0, conditions: null, wind_direction: null
+        });
+      }
+      const b = byHour.get(hourKey);
+      b.count++;
+      if (obs.temp_fahrenheit != null) b.temp_f += obs.temp_fahrenheit;
+      if (obs.feels_like_fahrenheit != null) b.feels_f += obs.feels_like_fahrenheit;
+      if (obs.humidity != null) b.humidity += obs.humidity;
+      if (obs.wind_speed != null) b.wind += obs.wind_speed;
+      if (obs.wind_gust != null) b.wind_gust_max = Math.max(b.wind_gust_max ?? 0, obs.wind_gust);
+      if (obs.pressure_mb != null) b.pressure += obs.pressure_mb;
+      if (obs.precip_today != null) b.precip = Math.max(b.precip ?? 0, obs.precip_today);
+      if (obs.solar_radiation != null) b.solar += obs.solar_radiation;
+      if (obs.uv_index != null) b.uv = Math.max(b.uv, obs.uv_index);
+      if (obs.conditions) b.conditions = obs.conditions;
+      if (obs.wind_direction != null) b.wind_direction = obs.wind_direction;
+    }
+
+    const toRow = (hourKey, bucket) => {
+      const tempF = bucket.count ? Math.round(bucket.temp_f / bucket.count) : null;
+      const feelsF = bucket.count ? Math.round(bucket.feels_f / bucket.count) : tempF;
+      const humidity = bucket.count ? Math.round(bucket.humidity / bucket.count) : null;
+      const windSpeed = bucket.count ? Math.round(bucket.wind / bucket.count * 10) / 10 : null;
+      const pressureMb = bucket.count ? bucket.pressure / bucket.count : null;
+      const pressureInHg = pressureMb != null ? (pressureMb * 0.02953).toFixed(2) : null;
+      const dp = (tempF != null && humidity != null) ? dewPoint(tempF, humidity) : null;
+      const dewPointF = dp != null ? Math.round(dp) : null;
+      const windDir = bucket.wind_direction != null ? tempestAPI.getWindDirection(bucket.wind_direction) : null;
+      return {
+        timestamp: hourKey,
+        time: formatTime(hourKey),
+        conditions: bucket.conditions || null,
+        tempF,
+        feelsLikeF: feelsF,
+        precipPct: null,
+        precipAmount: bucket.precip != null ? (bucket.precip > 0 ? bucket.precip.toFixed(2) : '0') : null,
+        cloudCover: null,
+        dewPointF,
+        humidity,
+        windSpeed,
+        windDirection: windDir,
+        pressureInHg
+      };
+    };
+
+    const rows = [];
+    for (let h = 0; h < 24; h++) {
+      const hourKey = startUnix + h * 3600;
+      const bucket = byHour.get(hourKey);
+      if (bucket && bucket.count > 0) {
+        rows.push(toRow(hourKey, { ...bucket, wind_direction: bucket.wind_direction }));
+      } else if (hourKey > nowUnix) {
+        rows.push({ timestamp: hourKey, time: formatTime(hourKey), conditions: null, tempF: null, feelsLikeF: null, precipPct: null, precipAmount: null, cloudCover: null, dewPointF: null, humidity: null, windSpeed: null, windDirection: null, pressureInHg: null });
+      } else {
+        rows.push(toRow(hourKey, { count: 0, temp_f: 0, feels_f: 0, humidity: 0, wind: 0, wind_gust_max: null, pressure: 0, precip: null, solar: 0, uv: 0, conditions: null, wind_direction: null }));
+      }
+    }
+
+    const needsForecast = dayStart <= new Date() && dayEnd >= new Date()  /* today */ ||
+      dayStart > new Date()  /* future date */;
+    if (needsForecast) {
+      try {
+        const complete = await tempestAPI.getCompleteWeather();
+        const hourly = complete.forecast?.hourly || [];
+        const daily = complete.forecast?.daily || [];
+        const isFutureDate = dayStart > new Date();
+
+        if (isFutureDate && daily.length > 0) {
+          const todayStart = new Date();
+          todayStart.setHours(0, 0, 0, 0);
+          const daysFromToday = Math.round((dayStart - todayStart) / (24 * 60 * 60 * 1000));
+          const matchingDay = daily[Math.min(Math.max(0, daysFromToday), daily.length - 1)];
+          if (matchingDay) {
+            const conditions = matchingDay.conditions || iconToConditions(matchingDay.icon) || null;
+            const highF = matchingDay.temperature?.high?.fahrenheit != null ? Math.round(matchingDay.temperature.high.fahrenheit) : null;
+            const lowF = matchingDay.temperature?.low?.fahrenheit != null ? Math.round(matchingDay.temperature.low.fahrenheit) : null;
+            const tempF = highF ?? lowF;
+            const pressureMb = complete.current?.pressure?.mb;
+            const pressureInHg = pressureMb != null ? (pressureMb * 0.02953).toFixed(2) : null;
+            for (let h = 0; h < 24; h++) {
+              const hourKey = startUnix + h * 3600;
+              const idx = h;
+              rows[idx] = {
+                timestamp: hourKey,
+                time: formatTime(hourKey),
+                conditions,
+                tempF,
+                feelsLikeF: tempF,
+                precipPct: matchingDay.precipProbability != null ? Math.round(matchingDay.precipProbability) : null,
+                precipAmount: '0',
+                cloudCover: null,
+                dewPointF: null,
+                humidity: null,
+                windSpeed: null,
+                windDirection: null,
+                pressureInHg
+              };
+            }
+          }
+        } else {
+        for (const hour of hourly) {
+          const ts = hour.time;
+          const hourKey = Math.floor(ts / 3600) * 3600;
+          if (hourKey >= startUnix && hourKey <= endUnix) {
+            const idx = Math.floor((hourKey - startUnix) / 3600);
+            if (idx >= 0 && idx < rows.length && hourKey > nowUnix) {
+              const tempF = hour.temperature?.fahrenheit != null ? Math.round(hour.temperature.fahrenheit) : null;
+              const humidity = hour.humidity != null ? Math.round(hour.humidity) : null;
+              const dp = (tempF != null && humidity != null) ? dewPoint(tempF, humidity) : null;
+              const dewPointF = dp != null ? Math.round(dp) : null;
+              const windDir = hour.wind?.direction != null ? tempestAPI.getWindDirection(hour.wind.direction) : null;
+              const pressureMb = complete.current?.pressure?.mb;
+              const pressureInHg = pressureMb != null ? (pressureMb * 0.02953).toFixed(2) : null;
+              const conditions = hour.conditions || iconToConditions(hour.icon) || null;
+              rows[idx] = {
+                timestamp: hourKey,
+                time: formatTime(hourKey),
+                conditions,
+                tempF,
+                feelsLikeF: hour.temperature?.fahrenheit != null ? Math.round(hour.temperature.fahrenheit) : null,
+                precipPct: hour.precipProbability != null ? Math.round(hour.precipProbability) : null,
+                precipAmount: '0',
+                cloudCover: null,
+                dewPointF,
+                humidity,
+                windSpeed: hour.wind?.speed != null ? Math.round(hour.wind.speed * 10) / 10 : null,
+                windDirection: windDir,
+                pressureInHg
+              };
+            }
+          }
+        }
+        }
+      } catch (err) {
+        console.warn('[hourly] Forecast merge failed:', err.message);
+      }
+    }
+
+    // Overlay manual precipitation entries onto the matching hour rows
+    try {
+      const manualPrecip = await db.getManualPrecipitationByTimestampRange(startUnix, endUnix);
+      const precipByHour = new Map();
+      for (const entry of manualPrecip) {
+        const hourKey = Math.floor(Number(entry.timestamp) / 3600) * 3600;
+        if (!precipByHour.has(hourKey)) precipByHour.set(hourKey, { total: 0, type: null, entries: 0 });
+        const bucket = precipByHour.get(hourKey);
+        bucket.total += Number(entry.amount_inches) || 0;
+        bucket.type = entry.precip_type || bucket.type;
+        bucket.entries++;
+      }
+      for (const [hourKey, bucket] of precipByHour) {
+        const idx = Math.floor((hourKey - startUnix) / 3600);
+        if (idx >= 0 && idx < rows.length) {
+          const existing = rows[idx].precipAmount != null ? parseFloat(rows[idx].precipAmount) : 0;
+          rows[idx].precipAmount = (existing + bucket.total).toFixed(2);
+          rows[idx].manualPrecip = { amountInches: parseFloat(bucket.total.toFixed(2)), type: bucket.type, entries: bucket.entries };
+        }
+      }
+    } catch (err) {
+      console.warn('[hourly] Manual precipitation overlay failed:', err.message);
+    }
+
+    // Overlay condition corrections: most recent correction per hour wins
+    try {
+      const corrections = await db.getCorrectionsForTimestampRange(startUnix, endUnix);
+      const corrByHour = new Map();
+      for (const corr of corrections) {
+        const hourKey = Math.floor(Number(corr.timestamp) / 3600) * 3600;
+        if (!corrByHour.has(hourKey)) corrByHour.set(hourKey, corr);
+      }
+      for (const [hourKey, corr] of corrByHour) {
+        const idx = Math.floor((hourKey - startUnix) / 3600);
+        if (idx >= 0 && idx < rows.length) {
+          rows[idx].originalCondition = rows[idx].conditions || corr.original_condition;
+          rows[idx].conditions = corr.reported_condition;
+          rows[idx].corrected = true;
+        }
+      }
+    } catch (err) {
+      console.warn('[hourly] Corrections overlay failed:', err.message);
+    }
+
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error('[hourly]', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+function formatTime(unix) {
+  const d = new Date(unix * 1000);
+  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+}
+
+/** Map Tempest icon string or numeric icon to human-readable conditions when API returns null. */
+function iconToConditions(icon) {
+  if (icon == null) return null;
+  const numMap = { 1: 'Clear', 2: 'Clear', 3: 'Partly Cloudy', 4: 'Partly Cloudy', 5: 'Partly Cloudy', 6: 'Partly Cloudy', 7: 'Mostly Cloudy', 8: 'Cloudy', 9: 'Cloudy', 10: 'Cloudy', 11: 'Rainy', 12: 'Rainy', 13: 'Rainy', 14: 'Rainy', 15: 'Thunderstorms', 16: 'Rainy', 17: 'Rainy', 18: 'Rainy', 19: 'Possible Snow', 20: 'Possible Snow', 21: 'Snow', 22: 'Snow', 23: 'Possible Sleet', 24: 'Sleet', 25: 'Foggy', 26: 'Windy', 27: 'Clear' };
+  if (typeof icon === 'number' && numMap[icon]) return numMap[icon];
+  if (typeof icon !== 'string') return null;
+  const map = {
+    'clear-day': 'Clear', 'clear-night': 'Clear',
+    'cloudy': 'Cloudy', 'partly-cloudy-day': 'Partly Cloudy', 'partly-cloudy-night': 'Partly Cloudy',
+    'mostly-cloudy-day': 'Mostly Cloudy', 'mostly-cloudy-night': 'Mostly Cloudy',
+    'foggy': 'Foggy', 'rainy': 'Rainy', 'possibly-rainy-day': 'Possible Rain', 'possibly-rainy-night': 'Possible Rain',
+    'sleet': 'Sleet', 'snow': 'Snow', 'possibly-snow-day': 'Possible Snow', 'possibly-snow-night': 'Possible Snow',
+    'possibly-sleet-day': 'Possible Sleet', 'possibly-sleet-night': 'Possible Sleet',
+    'possibly-thunderstorm-day': 'Possible Thunderstorms', 'possibly-thunderstorm-night': 'Possible Thunderstorms',
+    'thunderstorm': 'Thunderstorms', 'windy': 'Windy'
+  };
+  return map[icon] || null;
+}
+
+function dewPoint(tempF, humidity) {
+  if (!humidity || humidity <= 0) return null;
+  const tempC = (tempF - 32) * 5 / 9;
+  const a = 17.27, b = 237.7;
+  const alpha = (a * tempC) / (b + tempC) + Math.log(humidity / 100);
+  const dewPointC = (b * alpha) / (a - alpha);
+  return (dewPointC * 9 / 5) + 32;
+}
 
 /**
  * GET /api/weather/stats
@@ -517,11 +767,6 @@ router.get('/recent', async (req, res) => {
           };
         }
       }
-      if (debugMode) {
-        console.log('[recent 3d/7d]', JSON.stringify(recentMeta));
-      } else if (deviceIdForMerge && bucketsFromStation > 0) {
-        console.log('[recent 3d/7d] merged: local', recentMeta.bucketsWithData - bucketsFromStation, 'station fill', bucketsFromStation);
-      }
     } else {
       data = await db.getObservationsByTimestampRange(cutoffTime, nowUnix, 1000);
     }
@@ -654,8 +899,8 @@ router.get('/recent', async (req, res) => {
   }
 });
 
-const VALID_INTENTS = ['average', 'min', 'max', 'peak', 'summary', 'chart', 'trend'];
-const VALID_METRICS = ['temperature', 'wind', 'humidity', 'pressure', 'precipitation', 'solar', 'uv'];
+const VALID_INTENTS = ['average', 'min', 'max', 'peak', 'summary', 'chart', 'trend', 'current'];
+const VALID_METRICS = ['temperature', 'wind', 'humidity', 'pressure', 'precipitation', 'solar', 'uv', 'conditions'];
 const RANGE_TO_HOURS = { '24h': 24, '3d': 72, '7d': 168, '30d': 720 };
 
 function formatAskTime(unixSeconds) {
@@ -708,7 +953,64 @@ router.post('/ask', async (req, res) => {
     const bodyHours = body.hours;
 
     if (!intent || !VALID_INTENTS.includes(intent)) {
-      return res.status(400).json({ success: false, error: 'Invalid intent. Use: average, min, max, peak, summary, chart, trend' });
+      return res.status(400).json({ success: false, error: 'Invalid intent. Use: average, min, max, peak, summary, chart, trend, current' });
+    }
+
+    /* Current (latest value) does not use range/hours; handle early */
+    if (intent === 'current') {
+      try {
+        const obs = await db.getLatestObservation(7200);
+        if (!obs) {
+          return res.json({ success: true, data: { summary: 'No recent observations. Your station may be offline or still warming up.' } });
+        }
+        const m = metric && VALID_METRICS.includes(metric) ? metric : 'temperature';
+        let val = null;
+        let unit = '';
+        let label = m;
+        if (m === 'temperature') {
+          val = obs.temp_fahrenheit;
+          unit = '°F';
+          label = 'Temperature';
+        } else if (m === 'humidity') {
+          val = obs.humidity;
+          unit = '%';
+          label = 'Humidity';
+        } else if (m === 'wind') {
+          val = obs.wind_speed;
+          unit = ' mph';
+          label = 'Wind';
+        } else if (m === 'pressure') {
+          val = obs.pressure_mb;
+          unit = ' mb';
+          label = 'Pressure';
+        } else if (m === 'precipitation') {
+          val = obs.precip_today;
+          unit = ' in';
+          label = 'Precipitation today';
+        } else if (m === 'solar') {
+          val = obs.solar_radiation;
+          unit = ' W/m²';
+          label = 'Solar';
+        } else if (m === 'uv') {
+          val = obs.uv_index;
+          unit = '';
+          label = 'UV';
+        } else if (m === 'conditions') {
+          val = obs.conditions || null;
+          label = 'Conditions';
+        }
+        if (val == null && m !== 'conditions') {
+          return res.json({ success: true, data: { summary: `Current ${label} is not available right now.` } });
+        }
+        const timeStr = obs.timestamp ? formatAskTime(obs.timestamp) : '';
+        const summary = m === 'conditions'
+          ? (val ? `Currently ${val}.` : 'Current conditions are not available.')
+          : (val != null ? `Current ${label} is ${Math.round(Number(val))}${unit}${timeStr ? ` (${timeStr})` : ''}.` : '');
+        return res.json({ success: true, data: { summary } });
+      } catch (err) {
+        console.error('[ask] current error:', err);
+        return res.json({ success: true, data: { summary: 'Could not get current reading. Try again in a moment.' } });
+      }
     }
 
     /* Trend (humidity) does not use range/hours; handle first */
@@ -768,7 +1070,7 @@ router.post('/ask', async (req, res) => {
     const rangeLabel = getRangeLabel(hours);
 
     if (intent === 'chart') {
-      const m = metric && VALID_METRICS.includes(metric) ? metric : 'temperature';
+      const m = metric && VALID_METRICS.includes(metric) && metric !== 'conditions' ? metric : 'temperature';
       return res.json({
         success: true,
         data: {
@@ -838,24 +1140,22 @@ router.post('/ask', async (req, res) => {
         label = 'Temperature';
       } else if (metric === 'humidity') {
         unit = '%';
-        value = intent === 'average' ? stats.avg_humidity : null;
-        if (intent === 'min' || intent === 'max') value = null;
+        value = intent === 'average' ? stats.avg_humidity : intent === 'min' ? stats.min_humidity : intent === 'max' ? stats.max_humidity : null;
         label = 'Humidity';
       } else if (metric === 'wind') {
         unit = ' mph';
-        value = intent === 'average' ? stats.avg_wind_speed : intent === 'max' ? stats.max_wind_gust : null;
-        if (intent === 'min') value = null;
+        value = intent === 'average' ? stats.avg_wind_speed : intent === 'max' ? stats.max_wind_gust : intent === 'min' ? stats.min_wind_speed : null;
         label = 'Wind';
       } else if (metric === 'pressure') {
         unit = ' mb';
-        value = intent === 'average' ? stats.avg_pressure : null;
+        value = intent === 'average' ? stats.avg_pressure : intent === 'min' ? stats.min_pressure_mb : intent === 'max' ? stats.max_pressure_mb : null;
         label = 'Pressure';
       } else if (metric === 'precipitation') {
         unit = ' in';
         value = intent === 'average' || intent === 'min' ? null : stats.total_precipitation;
         label = 'Precipitation';
       } else if (metric === 'solar' || metric === 'uv') {
-        value = intent === 'max' ? (metric === 'uv' ? stats.max_uv : null) : null;
+        value = intent === 'max' ? (metric === 'uv' ? stats.max_uv : stats.max_solar_radiation) : null;
         if (metric === 'solar') unit = ' W/m²';
         label = metric === 'uv' ? 'UV' : 'Solar';
       }
@@ -867,10 +1167,10 @@ router.post('/ask', async (req, res) => {
       const intentLabel = intent === 'average' ? 'average' : intent === 'min' ? 'lowest' : 'highest';
       let dateStr = '';
       const hasSingleOccurrenceMinMax = intent !== 'average' && hours >= 168 &&
-        (metric === 'temperature' || metric === 'wind' || metric === 'solar' || metric === 'uv') &&
+        (metric === 'temperature' || metric === 'wind' || metric === 'humidity' || metric === 'pressure' || metric === 'solar' || metric === 'uv') &&
         !(metric === 'precipitation' && intent === 'max');
       if (hasSingleOccurrenceMinMax) {
-        const valueKey = metric === 'wind' ? 'wind_gust' : metric === 'temperature' ? 'temp_fahrenheit' : metric === 'solar' ? 'solar_radiation' : 'uv_index';
+        const valueKey = metric === 'wind' ? (intent === 'min' ? 'wind_speed' : 'wind_gust') : metric === 'temperature' ? 'temp_fahrenheit' : metric === 'humidity' ? 'humidity' : metric === 'pressure' ? 'pressure_mb' : metric === 'solar' ? 'solar_radiation' : 'uv_index';
         const nowUnix = Math.floor(endDate.getTime() / 1000);
         const cutoff = Math.floor(startDate.getTime() / 1000);
         const obs = await db.getObservationsByTimestampRange(cutoff, nowUnix, 5000);

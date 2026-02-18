@@ -19,6 +19,7 @@ Future development plans for the Tempest Weather Suite.
 
 ### Features to Implement
 
+- [x] **History View (1.5.0)**: Wunderground-style hourly table with date picker; conditions stored in observations; BottomNav (mobile) and History link (desktop). See `docs/plans/plan-1.5.0-history-view.md`.
 - [ ] React app with Chart.js
 - [ ] Historical temperature trends (line charts)
 - [ ] Precipitation history (bar charts)

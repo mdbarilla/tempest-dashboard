@@ -157,7 +157,7 @@ export function buildConditionsMetrics({ current, forecast, recent }) {
   const metrics = [
     {
       type: 'conditions',
-      label: 'Current conditions',
+      label: 'Conditions',
       condition: conditions || 'Clear',
       conditionDisplay,
     },

@@ -1,13 +1,13 @@
-/* Conditions List — list on mobile, grid on large. Card layout:
- * [Icon + Label] | divider | [Value + secondary] [Trendline]
- * Left column fixed width (narrow); trendline floats right; reduced left padding. */
+/* Conditions List — list on mobile, grid on large.
+ * Mobile: [Icon / Label] | divider | [Value / Secondary] [Sparkline]
+ * Desktop: card grid with icon, label, value, trend. */
 .conditions-list-page {
   --conditions-left-width: 8rem;
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;
-  overflow: visible;
+  overflow: hidden;
 }
 
 /* Header: same horizontal padding as footer (responsive), line inset so it doesn’t go edge-to-edge */
@@ -18,7 +18,9 @@
   padding: var(--padding-mobile) var(--padding-mobile) 1rem;
   flex-shrink: 0;
   background: var(--bg-card);
-  position: relative;
+  position: sticky;
+  top: 0;
+  z-index: 20;
 }
 
 .conditions-list-header::after {
@@ -70,6 +72,31 @@
   flex-wrap: wrap;
 }
 
+@media (max-width: 767px) {
+  .page-and-update-mobile {
+    display: inline;
+    font-size: var(--font-size-secondary);
+    color: var(--text-secondary);
+    font-weight: var(--weight-regular);
+  }
+  .conditions-list-nav-desktop {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) {
+  .page-and-update-mobile {
+    display: none;
+  }
+  .conditions-list-nav-desktop {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+  }
+}
+
 .conditions-list-header-row .conditions-list-updated {
   margin: 0;
 }
@@ -82,6 +109,7 @@
   font-family: var(--font-display);
   font-size: 1.75rem;
   font-weight: var(--weight-medium);
+  letter-spacing: -0.02em;
   color: var(--text-primary);
   margin: 0 0 0.5rem 0;
   line-height: 1.2;
@@ -184,13 +212,11 @@ a.conditions-list-card {
 }
 
 @media (max-width: 767px) {
-  /* Vertical scroll only; each card handles its own horizontal swipe */
   .conditions-list-grid {
-    touch-action: pan-y;
-    overflow-x: hidden;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
-  /* Swipeable row: manipulation allows both axes so our JS can detect horizontal swipes */
   a.conditions-list-card {
     touch-action: manipulation;
   }
@@ -489,17 +515,68 @@ a.conditions-list-card {
   text-overflow: ellipsis;
 }
 
-/* Mobile: prevent horizontal overflow/clipping of text in cards */
+/* Mobile: narrow left column, allow secondary text to wrap, no trend separator.
+ * Must come AFTER base declarations to win the cascade. */
 @media (max-width: 767px) {
-  .conditions-list-label,
+  /* Compact left column gap */
+  .conditions-list-left {
+    gap: var(--space-1);
+  }
+
+  /* Narrower divider margin */
+  .conditions-list-divider {
+    margin: 0 var(--space-2);
+  }
+
+  /* Breathing room after divider; tight gap to trend; scroll if content overflows */
+  .conditions-list-right {
+    padding-left: var(--space-3);
+    gap: var(--space-1);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .conditions-list-right::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Protect value column from chart encroachment */
+  .conditions-list-value-block {
+    min-width: var(--history-conditions-min-width, 7rem);
+    flex-shrink: 0;
+  }
+
+  /* Compact primary values */
+  .conditions-list-value {
+    font-size: 1.4rem;
+  }
+
+  .conditions-list-condition-text {
+    font-size: 1.4rem;
+  }
+
+  /* Let secondary text and precip metadata wrap naturally */
   .conditions-list-secondary,
-  .conditions-list-condition-text,
-  .conditions-list-value,
   .conditions-list-feels-like-highlow {
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .conditions-list-precip-row .conditions-list-secondary {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+  }
+
+  /* Prevent horizontal overflow on labels */
+  .conditions-list-label,
+  .conditions-list-condition-text {
     overflow: hidden;
     text-overflow: ellipsis;
     min-width: 0;
   }
+
   .conditions-list-condition-block {
     min-width: 0;
   }
@@ -574,38 +651,63 @@ a.conditions-list-card {
   white-space: nowrap;
 }
 
-/* Precip card: row height matches other secondary lines; button absolutely positioned to not affect height */
-.conditions-list-precip-row {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: var(--space-3);
-  min-height: 1.35em;
-  position: relative;
-  padding-right: 3rem;
-  min-width: 0;
-  flex-wrap: nowrap;
-}
-
-.conditions-list-precip-row .conditions-list-secondary {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.conditions-list-precip-row .precip-logger-wrapper {
+/* Precip edit button — positioned top-right of the card row */
+.conditions-list-precip-edit {
   position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  flex-shrink: 0;
+  top: var(--space-3);
+  right: var(--space-2);
   display: flex;
   align-items: center;
+  z-index: 5;
 }
 
-.conditions-list-precip-row .precip-logger-wrapper .precip-add-btn {
+.conditions-list-precip-edit .precip-add-btn {
   padding: 0;
   margin: 0;
+}
+
+/* Mobile overrides that MUST win over base trend/card declarations (cascade order). */
+@media (max-width: 767px) {
+  /* Charts crop at viewport edge — remove right padding from grid and card */
+  .conditions-list-grid {
+    padding-right: 0 !important;
+  }
+
+  .conditions-list-card {
+    padding-right: 0 !important;
+  }
+
+  /* Widen left column to fit labels + padding before divider */
+  .conditions-list-left {
+    flex: 0 0 6.5rem !important;
+    width: 6.5rem !important;
+    min-width: 6.5rem !important;
+    padding-right: var(--space-4) !important;
+  }
+
+  /* Card allows its right section to scroll horizontally */
+  .conditions-list-card {
+    overflow: hidden;
+  }
+
+  /* Space between value-block and trend */
+  .conditions-list-right {
+    gap: var(--space-3) !important;
+  }
+
+  /* Fix clipped descenders on unit text (e.g. "inHg") */
+  .conditions-list-value {
+    line-height: 1.15 !important;
+    overflow: visible !important;
+  }
+
+  /* Left-align sparklines and callouts with sparkline start */
+  .conditions-list-trend {
+    align-items: flex-start !important;
+    margin-left: 0 !important;
+  }
+
+  .conditions-list-trend-viz {
+    justify-content: flex-start !important;
+  }
 }

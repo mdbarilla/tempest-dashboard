@@ -1,0 +1,98 @@
+/**
+ * Shared page header styles (History, Chat, ConditionsList)
+ * Uses design tokens only.
+ */
+
+/* Header inner layout */
+.history-header-inner,
+.chat-header-inner {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Title */
+.history-title,
+.chat-title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: var(--weight-medium);
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem 0;
+}
+
+.history-title-city,
+.chat-title-city {
+  font-weight: var(--weight-regular);
+  color: var(--text-secondary);
+  font-size: 1.5rem;
+}
+
+.history-header-row,
+.chat-header-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.history-updated,
+.chat-updated {
+  font-size: var(--font-size-secondary);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.history-nav-sep,
+.chat-nav-sep {
+  color: var(--text-muted);
+  font-size: var(--font-size-secondary);
+}
+
+.history-nav-link,
+.chat-nav-link {
+  font-size: var(--font-size-secondary);
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color var(--transition-hover);
+}
+
+.history-nav-link:hover,
+.chat-nav-link:hover {
+  color: var(--text-primary);
+}
+
+/* Active page label in desktop nav */
+.header-nav-active {
+  font-size: var(--font-size-secondary);
+  color: var(--text-primary);
+  font-weight: var(--weight-medium);
+}
+
+/* Mobile: page name + update; desktop: nav links */
+@media (max-width: 767px) {
+  .page-and-update-mobile {
+    display: inline;
+    font-size: var(--font-size-secondary);
+    color: var(--text-secondary);
+    font-weight: var(--weight-regular);
+  }
+  .history-nav-desktop,
+  .chat-nav-desktop {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) {
+  .page-and-update-mobile {
+    display: none;
+  }
+  .history-nav-desktop,
+  .chat-nav-desktop {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+  }
+}

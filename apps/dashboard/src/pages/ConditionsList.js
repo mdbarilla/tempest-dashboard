@@ -171,11 +171,22 @@ const ConditionsList = ({
           <h1 className="conditions-list-title">Tower Hill&nbsp;&nbsp;<span className="conditions-list-city">Wayland</span></h1>
           <div className="conditions-list-header-row">
             {lastUpdate && (
-              <p className="conditions-list-updated">
-                Updated {lastUpdate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
-              </p>
+              <>
+                <span className="page-and-update-mobile">
+                  Currently • Updated {lastUpdate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                </span>
+                <span className="conditions-list-nav-desktop">
+                  <p className="conditions-list-updated">
+                    Updated {lastUpdate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                  </p>
+                  <ViewToggle />
+                  <span className="view-toggle-bullet" aria-hidden="true">•</span>
+                  <Link to="/history" className="view-toggle-label history-link">History</Link>
+                  <span className="view-toggle-bullet" aria-hidden="true">•</span>
+                  <Link to="/chat" className="view-toggle-label history-link">Ask</Link>
+                </span>
+              </>
             )}
-            <ViewToggle />
           </div>
         </div>
       </header>
@@ -234,6 +245,13 @@ const ConditionsList = ({
                   </div>
                 ) : (
                   <>
+                    {m.type === 'precipitation' && isLocal && (
+                      <span className="conditions-list-precip-edit" onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
+                        <PrecipitationLogger
+                          onAddClick={() => navigate('/conditions/precipitation', { state: { from: 'list', view: 'add' } })}
+                        />
+                      </span>
+                    )}
                     <div className="conditions-list-value-block">
                       <div className="conditions-list-value">
                         {m.value}
@@ -248,14 +266,7 @@ const ConditionsList = ({
                           {m.highLowDisplay && <>{m.highLowDisplay}</>}
                         </div>
                       )}
-                      {m.secondary && m.type === 'precipitation' && isLocal ? (
-                        <div className="conditions-list-precip-row" onClick={(e) => e.stopPropagation()}>
-                          <div className="conditions-list-secondary">{m.secondary}</div>
-                          <PrecipitationLogger
-                            onAddClick={() => navigate('/conditions/precipitation', { state: { from: 'list', view: 'add' } })}
-                          />
-                        </div>
-                      ) : m.secondary ? (
+                      {m.secondary ? (
                         <div className="conditions-list-secondary">{m.secondary}</div>
                       ) : null}
                       {m.customContent?.notes && (

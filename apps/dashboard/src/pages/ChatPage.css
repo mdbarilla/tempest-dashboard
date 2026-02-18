@@ -1,0 +1,80 @@
+/**
+ * Chat page - Ask about weather as full page
+ */
+@import '../styles/page-header.css';
+
+.chat-page {
+  padding: var(--app-gutter-mobile) var(--app-gutter-mobile) 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 767px) {
+  .chat-page {
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: var(--app-gutter-mobile);
+  }
+
+  .chat-header {
+    padding-left: var(--app-gutter-mobile);
+    padding-right: var(--app-gutter-mobile);
+  }
+}
+
+@media (min-width: 768px) {
+  .chat-page {
+    padding: var(--app-gutter-tablet) var(--app-gutter-tablet) var(--app-gutter-tablet);
+  }
+}
+
+@media (min-width: 1024px) {
+  .chat-page {
+    padding: var(--app-gutter) var(--app-gutter) var(--app-gutter);
+  }
+}
+
+.chat-header {
+  margin-bottom: 0;
+  padding-bottom: var(--space-4);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--bg-primary);
+}
+
+.chat-header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--border-light);
+}
+
+.chat-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chat-content .ask-modal--embedded {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: var(--ask-modal-min-height);
+  background: var(--bg-card);
+}
+
+@media (min-width: 768px) {
+  .chat-content .ask-modal--embedded {
+    background: var(--bg-card-tint);
+    margin-top: var(--space-4);
+  }
+}

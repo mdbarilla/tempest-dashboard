@@ -1,6 +1,6 @@
 {
   "name": "tempest-dashboard",
-  "version": "1.4.11",
+  "version": "1.5.0",
   "description": "Minimalist Tempest weather dashboard for Raspberry Pi",
   "private": true,
   "dependencies": {

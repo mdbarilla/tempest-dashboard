@@ -7,22 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Deferred to future build
-- **Mobile list view row swipeability**: Not a top priority; other changes deployed first.
-
-
-### Planned for 1.5.0 (LLM)
+### Planned for 1.6.0 (LLM)
 - **LLM historical chat**: In-app chat for historical data queries
 - **Bug #1**: Fix "Condition summary unavailable"
 - **Bug #4**: LLM prompt refinements
 - **Details:** `docs/plans/plan-1.6.0-llm-historical-chat.md`
 
-### Planned for 1.6.0 (Radar)
+### Planned for 1.7.0 (Radar)
 - **Radar preview tile**: Conditional tile (first in metrics list) when precip conditions; icon + title + radar background; full-width on tablet grid. See `docs/plans/plan-1.5.0-radar-tile.md`.
 
 ### TBD (Wind chart improvements)
 - **Wind Detail Chart — Dual Trend Lines**: Speed + gusts as separate trend lines
 - **Wind Chart Seismograph Effect**: 5-min bucketing or smoothing for jagged 24h wind lines
+
+### Deferred
+- **Mobile list view row swipeability**: Not a top priority; other changes deployed first.
+
+## [1.5.0] - 2026-02-18
+
+### Added
+- **History view**: Wunderground-style hourly weather table at `/history` with date picker (up to 7 days back, 10 days forward). Merges local observations (past) with Tempest forecast (future) for today. Hourly columns: Time, Conditions, Temp., Feels Like, Humidity, Wind, Pressure, Dew Point, Precip %, Amount, Cloud Cover.
+- **Ask page**: Dedicated full-page chat interface at `/chat`, embedding the Ask modal with persistent page layout and header navigation.
+- **Bottom navigation (mobile)**: Fixed bottom nav bar on mobile (≤767px) with Dashboard, Currently, History, and Ask tabs. Active tab uses `--accent-blue`; inactive uses `--text-secondary`.
+- **History & Ask links (desktop)**: Navigation links added to the desktop nav row in the CurrentWeather and ConditionsList page headers.
+- **Conditions in observations**: `conditions` column added to the observations database table. Data collector now stores the current API condition string with each observation so historical rows reflect accurate conditions in the History view.
+- **Hourly API endpoint**: `GET /api/weather/hourly/:date` returns a 24-row array for a given date, merging local observations with Tempest forecast hourly/daily data, manual precipitation overlays, and condition corrections.
+
+### Changed
+- **Page header shared styles**: `page-header.css` extracted as a shared import for History and Chat page headers. Defines title, nav row, updated timestamp, and mobile/desktop visibility using design tokens throughout.
+
+### Technical
+- `apps/dashboard/src/pages/HistoryPage.js`: Date-picker header, sticky table with staggered row entrance animation, forecast/observation merge, corrected and manually-logged row badges.
+- `apps/dashboard/src/pages/ChatPage.js`: Full-page Ask wrapper with shared page header and nav.
+- `apps/dashboard/src/components/BottomNav.js`: Mobile bottom nav with `NavLink` active states; hidden at ≥768px.
+- `apps/dashboard/src/styles/page-header.css`: Shared header styles for History and Chat pages; all values use design tokens.
+- `backend/api/weather.js`: `GET /api/weather/hourly/:date` — hourly bucketing, forecast merge for today/future, manual precip overlay, corrections overlay.
+- `backend/services/database.js`: `conditions` column in observations schema; `getCorrectionsForTimestampRange` for hourly overlay; `getManualPrecipitationByTimestampRange` for history overlay.
+- `App.js`: Routes for `/history`, `/history/:date`, `/chat`; `BottomNav` rendered at app level; `lastMainView` tracking in `RefreshManager` for History/Ask back-navigation.
 
 ## [1.4.11] - 2026-02-09
 

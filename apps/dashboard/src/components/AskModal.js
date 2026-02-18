@@ -29,13 +29,14 @@ function saveStoredMessages(messages) {
 }
 
 const QUICK_REPLIES = [
+  { label: 'Current conditions', intent: 'current', metric: 'conditions' },
   { label: 'Summary (24h)', intent: 'summary', range: '24h' },
-  { label: 'Lowest temp this week', intent: 'min', metric: 'temperature', range: '7d' },
-  { label: 'Highest temp', intent: 'max', metric: 'temperature', range: '7d' },
-  { label: 'Highest wind', intent: 'max', metric: 'wind', range: '24h' },
-  { label: 'Temp chart (24h)', intent: 'chart', metric: 'temperature', range: '24h' },
-  { label: 'Wind chart (3d)', intent: 'chart', metric: 'wind', hours: 72 },
-  { label: 'Current humidity trend', intent: 'trend', metric: 'humidity' },
+  { label: 'Lowest temp (7d)', intent: 'min', metric: 'temperature', range: '7d' },
+  { label: 'Highest temp (7d)', intent: 'max', metric: 'temperature', range: '7d' },
+  { label: 'Most precip (7d)', intent: 'peak', metric: 'precipitation', range: '7d' },
+  { label: 'Temp chart (3d)', intent: 'chart', metric: 'temperature', hours: 72 },
+  { label: 'Wind chart (24h)', intent: 'chart', metric: 'wind', range: '24h' },
+  { label: 'Humidity trend', intent: 'trend', metric: 'humidity' },
 ];
 
 function AskMessageChart({ metric, hours }) {
@@ -56,12 +57,13 @@ function AskMessageChart({ metric, hours }) {
   );
 }
 
-const VALID_METRICS = ['temperature', 'wind', 'humidity', 'pressure', 'precipitation', 'solar', 'uv'];
+const VALID_METRICS = ['temperature', 'wind', 'humidity', 'pressure', 'precipitation', 'solar', 'uv', 'conditions'];
 const METRIC_ALIASES = {
   temp: 'temperature', temperature: 'temperature',
   wind: 'wind', humidity: 'humidity', pressure: 'pressure',
   precip: 'precipitation', precipitation: 'precipitation', rain: 'precipitation',
   solar: 'solar', uv: 'uv',
+  conditions: 'conditions', condition: 'conditions', weather: 'conditions',
 };
 
 /** Parse range: default past week (7d). Supports "past N hours", "N days", 24h/3d/7d/30d. */
@@ -76,9 +78,10 @@ function parseRange(t) {
     const n = Math.min(30, Math.max(1, parseInt(daysMatch[1], 10)));
     return { hours: n * 24 };
   }
-  if (/\b(24h|24 h|24 hour|last 24|today)\b/.test(t)) return { range: '24h' };
-  if (/\b(3d|3 d|3 day)\b/.test(t)) return { hours: 72 };
-  if (/\b(30d|30 d|month)\b/.test(t)) return { range: '30d' };
+  if (/\b(24h|24\s*h|24\s*hour|24\s*hours?|24hr|last\s+24|today)\b/.test(t)) return { range: '24h' };
+  if (/\b(3d|3\s*d|3\s*day|3\s*days?|3-day|72h|72\s*h)\b/.test(t)) return { hours: 72 };
+  if (/\b(7d|7\s*d|7\s*day|7\s*days?|7-day|week)\b/.test(t)) return { range: '7d' };
+  if (/\b(30d|30\s*d|30\s*day|month)\b/.test(t)) return { range: '30d' };
   return { range: '7d' };
 }
 
@@ -97,13 +100,15 @@ function parseAskQuery(text) {
 
   const metric = findMetric();
 
+  if (/\b(current|right\s+now|now)\b/.test(t) && (metric || /\b(conditions?|weather|temp|temperature|humidity|wind|pressure|precip|rain|solar|uv)\b/.test(t)))
+    return { intent: 'current', metric: metric || (/\bconditions?\b|\bweather\b/.test(t) ? 'conditions' : 'temperature'), ...rangePart };
   if (/\b(lowest|min|minimum|coldest)\b/.test(t) && metric)
     return { intent: 'min', metric, ...rangePart };
   if (/\b(highest|max|maximum|hottest)\b/.test(t) && metric)
     return { intent: 'max', metric, ...rangePart };
-  if (/\b(peak|peaked)\b/.test(t) && metric)
-    return { intent: 'peak', metric, ...rangePart };
-  if (/\b(trend|trending|current)\b/.test(t) && (metric === 'humidity' || /\bhumidity\b/.test(t)))
+  if (/\b(most|peak|peaked)\b/.test(t) && (metric || /\bprecip\b|\bprecipitation\b|\brain\b/.test(t)))
+    return { intent: 'peak', metric: metric || 'precipitation', ...rangePart };
+  if (/\b(trend|trending)\b/.test(t) && (metric === 'humidity' || /\bhumidity\b/.test(t)))
     return { intent: 'trend', metric: 'humidity' };
   if (/\b(average|avg)\b/.test(t) && metric)
     return { intent: 'average', metric, ...rangePart };
@@ -115,7 +120,7 @@ function parseAskQuery(text) {
   return null;
 }
 
-const AskModal = ({ isOpen, onClose }) => {
+const AskModal = ({ isOpen, onClose, embedded = false }) => {
   const [messages, setMessages] = useState(loadStoredMessages);
   const [loading, setLoading] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -123,8 +128,12 @@ const AskModal = ({ isOpen, onClose }) => {
   const inputRef = useRef(null);
 
   useEffect(() => {
-    if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
-  }, [messages]);
+    if (listRef.current) {
+      requestAnimationFrame(() => {
+        listRef.current.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
+      });
+    }
+  }, [messages, loading]);
 
   useEffect(() => {
     if (messages.length > 0) saveStoredMessages(messages);
@@ -199,7 +208,7 @@ const AskModal = ({ isOpen, onClose }) => {
       setMessages((prev) => [
         ...prev,
         { role: 'user', text },
-        { role: 'assistant', text: 'Try the suggestions below, or type: highest/lowest temp or wind, summary, temp/wind chart (24h, 3d, 7d), or current humidity trend.' }
+        { role: 'assistant', text: 'Try the suggestions below, or type: current temp/conditions/wind, highest/lowest temp or wind, most precip, summary, chart (24h, 3d, 7d), or humidity trend.' }
       ]);
       setInputValue('');
     }
@@ -207,35 +216,34 @@ const AskModal = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
-  return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      size="xl"
-      ariaLabelledBy="ask-modal-title"
-      className="ask-modal"
-    >
+  const content = (
+    <>
       <div className="ask-modal-header">
-        <h2 id="ask-modal-title" className="ask-modal-title">Ask about weather</h2>
+        <div className="ask-modal-header-text">
+          <h2 id="ask-modal-title" className="ask-modal-title">Ask about the weather</h2>
+          <p className="ask-modal-subhead">Try: current conditions, highest temp 7d, summary, chart, or humidity trend</p>
+        </div>
         <div className="ask-modal-header-actions">
           {messages.length > 0 && (
             <button type="button" className="ask-modal-start-over" onClick={handleStartOver}>
               Start over
             </button>
           )}
+          {!embedded && (
             <button type="button" className="ask-modal-close" onClick={onClose} aria-label="Close">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-          </button>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            </button>
+          )}
         </div>
       </div>
       <div className="ask-modal-list" ref={listRef} role="log" aria-live="polite">
         {messages.length === 0 && (
           <div className="ask-message ask-message--assistant ask-message--empty">
-            <span className="ask-message-text">I can help you dig into recent weather. Tap one of the suggestions below, or type your own, like a 24h summary, highest or lowest temp or wind, or a temp or wind chart (24h, 3d, or 7d). You can also ask how humidity is trending right now. What would you like to know?</span>
+            <span className="ask-message-text">I can help you dig into recent weather. Tap a suggestion below, or type: current temp/conditions/wind, highest/lowest temp or wind, most precip, summary (24h/3d/7d), chart (24h/3d/7d), or humidity trend. What would you like to know?</span>
           </div>
         )}
         {messages.map((msg, i) => (
-          <div key={i} className={`ask-message ask-message--${msg.role}`}>
+          <div key={i} className={`ask-message ask-message--${msg.role}`} style={{ animationDelay: `${i * 0.04}s` }}>
             <span className="ask-message-text">{msg.text}</span>
             {msg.role === 'assistant' && msg.chart && (
               <AskMessageChart metric={msg.chart.metric} hours={msg.chart.hours} />
@@ -249,6 +257,7 @@ const AskModal = ({ isOpen, onClose }) => {
         )}
       </div>
       <div className="ask-modal-footer">
+        <p className="ask-quick-title">Quick Links</p>
         <div className="ask-quick-replies">
           {QUICK_REPLIES.map((item, i) => (
             <button
@@ -267,7 +276,7 @@ const AskModal = ({ isOpen, onClose }) => {
             ref={inputRef}
             type="text"
             className="ask-input"
-            placeholder="e.g. summary 24h, highest temp, wind chart 3d, current humidity trend"
+            placeholder="e.g. current conditions, highest temp 7d, most precip, wind chart 24h"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             disabled={loading}
@@ -278,6 +287,22 @@ const AskModal = ({ isOpen, onClose }) => {
           </button>
         </form>
       </div>
+    </>
+  );
+
+  if (embedded) {
+    return <div className="ask-modal ask-modal--embedded">{content}</div>;
+  }
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size="xl"
+      ariaLabelledBy="ask-modal-title"
+      className="ask-modal"
+    >
+      {content}
     </Modal>
   );
 };

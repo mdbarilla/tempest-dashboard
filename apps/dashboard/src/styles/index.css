@@ -65,6 +65,9 @@
   --banner-btn-bg-hover: rgba(255, 255, 255, 0.25);
   --banner-btn-border-hover: rgba(255, 255, 255, 0.5);
 
+  /* Ask input — bright fill for search field */
+  --ask-input-fill: #ffffff;
+
   /* Accent overlay (tinted surfaces) */
   --accent-overlay: rgba(77, 125, 157, 0.2);
   --accent-overlay-hover: rgba(77, 125, 157, 0.25);
@@ -92,6 +95,7 @@
   --border-on-light-strong: rgba(0, 0, 0, 0.15);
 
   /* Spacing scale (8px base) */
+  --space-row: 1px;    /* Table/list row gap */
   --space-1: 0.25rem;  /* 4px */
   --space-2: 0.5rem;   /* 8px */
   --space-3: 0.75rem;  /* 12px */
@@ -100,6 +104,15 @@
   --space-6: 2rem;     /* 32px */
   --space-7: 3rem;     /* 48px */
   --space-8: 4rem;     /* 64px */
+
+  /* Fixed UI heights */
+  --bottom-nav-height: 60px;
+  --bottom-nav-space: calc(var(--bottom-nav-height) + var(--space-3));
+  --ask-footer-mobile-height: 220px;
+  --chart-height: 220px;
+  --ask-modal-min-height: 400px;
+  --history-conditions-min-width: 7rem;
+  --history-table-max-offset: 280px;
 
   /* Typography - Optical Adjustments */
   --hero-optical-offset: -0.05em;  /* Fixes "12°" serif alignment */
@@ -122,9 +135,12 @@
   --ui-border: rgba(0, 0, 0, 0.12);
 
   /* Typography */
-  --font-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
-  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  --font-primary: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body: var(--font-primary);
+  --font-size-base: 1rem;         /* Body, form inputs */
   --font-size-secondary: 0.875rem; /* Timestamp, atmospheric summary, metrics secondary, footer-link, forecast-condition, coming-soon (secondary-tier text) */
+  --font-size-nav: 0.75rem;        /* Bottom nav labels, compact UI */
 
   /* Font weights */
   --weight-light: 300;
@@ -153,6 +169,7 @@ body.theme-dark {
   --accent-overlay: rgba(228, 228, 231, 0.15);
   --accent-overlay-hover: rgba(228, 228, 231, 0.22);
   --accent-overlay-subtle: rgba(228, 228, 231, 0.08);
+  --ask-input-fill: rgba(255, 255, 255, 0.12);
 }
 
 html, body, #root {

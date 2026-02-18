@@ -3,13 +3,11 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import WeatherIcon from './WeatherIcon';
 import ConditionCorrector from './ConditionCorrector';
-import { ReactComponent as SparkIcon } from './spark-icon.svg';
 import { ReactComponent as ThumbUpIcon } from './thumb-up-icon.svg';
 import { ReactComponent as ThumbDownIcon } from './thumb-down-icon.svg';
 import StormWarningDetail from './StormWarningDetail';
 import ViewToggle from './ViewToggle';
 import AtmosphereFeedbackModal from './AtmosphereFeedbackModal';
-import AskModal from './AskModal';
 import './StormWarning.css';
 import './CurrentWeather.css';
 
@@ -23,7 +21,6 @@ const LLM_MAX_AGE_HOURS = 2;
 const MODAL_STORAGE_KEYS = {
   stormDetail: 'tempest-storm-detail-open',
   feedback: 'tempest-feedback-modal-open',
-  ask: 'tempest-ask-modal-open',
 };
 
 function getStoredModalOpen(key) {
@@ -53,7 +50,6 @@ const CurrentWeather = ({ current, forecast, lastUpdate, alerts = [], atmosphere
   const [refreshingAfterDown, setRefreshingAfterDown] = useState(false);
   const [feedbackModalOpen, setFeedbackModalOpenState] = useState(() => getStoredModalOpen(MODAL_STORAGE_KEYS.feedback));
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
-  const [askModalOpen, setAskModalOpenState] = useState(() => getStoredModalOpen(MODAL_STORAGE_KEYS.ask));
 
   const setStormDetailOpen = (v) => {
     setStormDetailOpenState(v);
@@ -62,10 +58,6 @@ const CurrentWeather = ({ current, forecast, lastUpdate, alerts = [], atmosphere
   const setFeedbackModalOpen = (v) => {
     setFeedbackModalOpenState(v);
     setStoredModalOpen(MODAL_STORAGE_KEYS.feedback, v);
-  };
-  const setAskModalOpen = (v) => {
-    setAskModalOpenState(v);
-    setStoredModalOpen(MODAL_STORAGE_KEYS.ask, v);
   };
 
   // When new atmosphere arrives (different generatedAt), clear down state so the new description shows with thumbs
@@ -175,7 +167,13 @@ const CurrentWeather = ({ current, forecast, lastUpdate, alerts = [], atmosphere
   const isNight = isCurrentlyNight();
 
   const handleCorrection = async (reportedCondition, precipPct = null) => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/b82af7dd-022a-4b64-a61f-996ea387a2e5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CurrentWeather.js:handleCorrection:entry',message:'handleCorrection called',data:{reportedCondition,url:`${API_BASE_URL}/correction`},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
     try {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/b82af7dd-022a-4b64-a61f-996ea387a2e5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CurrentWeather.js:handleCorrection:beforePost',message:'before axios.post',data:{},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       await axios.post(`${API_BASE_URL}/correction`, {
         timestamp: current.timestamp,
         reportedCondition,
@@ -184,9 +182,15 @@ const CurrentWeather = ({ current, forecast, lastUpdate, alerts = [], atmosphere
         precip_pct_at_correction: precipPct != null ? Number(precipPct) : null
       });
 
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/b82af7dd-022a-4b64-a61f-996ea387a2e5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CurrentWeather.js:handleCorrection:afterPost',message:'POST succeeded, about to reload',data:{},timestamp:Date.now(),hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
       // Refresh the page to get updated conditions
       window.location.reload();
     } catch (error) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/b82af7dd-022a-4b64-a61f-996ea387a2e5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CurrentWeather.js:handleCorrection:catch',message:'POST failed',data:{errMsg:String(error?.message||error),status:error?.response?.status},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
       console.error('Error submitting correction:', error);
       throw error;
     }
@@ -279,13 +283,22 @@ const CurrentWeather = ({ current, forecast, lastUpdate, alerts = [], atmosphere
           <h1>Tower Hill&nbsp;&nbsp;<span className="location-city">Wayland</span></h1>
           {lastUpdate && (
             <div className="weather-header-row">
-              <span className="last-update">
-                Updated {lastUpdate.toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
+              <span className="page-and-update-mobile">
+                Dashboard • Updated {lastUpdate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
               </span>
-              <ViewToggle />
+              <span className="weather-header-nav-desktop">
+                <span className="last-update">
+                  Updated {lastUpdate.toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </span>
+                <ViewToggle />
+                <span className="view-toggle-bullet" aria-hidden="true">•</span>
+                <Link to="/history" className="view-toggle-label history-link">History</Link>
+                <span className="view-toggle-bullet" aria-hidden="true">•</span>
+                <Link to="/chat" className="view-toggle-label history-link">Ask</Link>
+              </span>
             </div>
           )}
         </div>
@@ -314,17 +327,6 @@ const CurrentWeather = ({ current, forecast, lastUpdate, alerts = [], atmosphere
                       onCancel={handleCancelCorrection}
                       isCorrected={isCorrected}
                     />
-                    <div className="condition-corrector-wrapper">
-                      <button
-                        type="button"
-                        className="condition-btn condition-ask-btn"
-                        onClick={(e) => { e.stopPropagation(); setAskModalOpen(true); }}
-                        title="Ask about weather"
-                        aria-label="Ask about weather"
-                      >
-                        <SparkIcon className="condition-ask-icon" aria-hidden />
-                      </button>
-                    </div>
                   </div>
                 )}
                 {alerts.length > 0 && (
@@ -563,7 +565,6 @@ const CurrentWeather = ({ current, forecast, lastUpdate, alerts = [], atmosphere
         </div>
       )}
       {stormDetailOpen && <StormWarningDetail alerts={alerts} onClose={() => setStormDetailOpen(false)} />}
-      <AskModal isOpen={askModalOpen} onClose={() => setAskModalOpen(false)} />
       <AtmosphereFeedbackModal
         isOpen={feedbackModalOpen}
         description={atmosphere?.description || ''}

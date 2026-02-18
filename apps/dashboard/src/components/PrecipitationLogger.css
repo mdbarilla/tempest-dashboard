@@ -8,6 +8,13 @@
   pointer-events: auto;
 }
 
+/* Inside conditions-list: parent handles positioning */
+.conditions-list-precip-edit .precip-logger-wrapper {
+  position: static;
+  bottom: auto;
+  right: auto;
+}
+
 .precip-btn {
   width: 44px;
   height: 44px;

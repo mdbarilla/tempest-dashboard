@@ -94,6 +94,12 @@ body.theme-dark .connection-banner.stale {
   overflow: visible;
 }
 
+@media (max-width: 767px) {
+  .container {
+    padding-bottom: var(--bottom-nav-space);
+  }
+}
+
 /* Header */
 .header {
   text-align: left;
@@ -123,7 +129,7 @@ body.theme-dark .connection-banner.stale {
   overflow: visible;
 }
 
-/* Route content wrapper (e.g. conditions list) for flex + scroll */
+/* Route content wrapper — each child page manages its own scroll. */
 .route-content {
   flex: 1;
   min-height: 0;
@@ -195,6 +201,19 @@ body.theme-dark .connection-banner.stale {
 }
 
 .view-toggle:hover {
+  color: var(--text-primary);
+}
+
+.history-link {
+  font-family: var(--font-primary);
+  font-size: var(--font-size-secondary);
+  font-weight: var(--weight-regular);
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.history-link:hover {
   color: var(--text-primary);
 }
 
