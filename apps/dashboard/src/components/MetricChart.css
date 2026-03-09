@@ -16,6 +16,12 @@
   outline: none;
 }
 
+.metric-chart-container--click *,
+.metric-chart-container--click svg {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
 .metric-chart-empty {
   display: flex;
   align-items: center;
@@ -67,4 +73,10 @@
   color: var(--text-secondary);
   margin-top: 0.25rem;
   font-style: italic;
+}
+
+@media (max-width: 767px) {
+  .metric-chart-container {
+    padding: 0.2rem 0 0.2rem 0;
+  }
 }

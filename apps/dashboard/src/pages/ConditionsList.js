@@ -10,12 +10,10 @@ import AtmosphereFeedbackModal from '../components/AtmosphereFeedbackModal';
 import {
   buildConditionsMetrics,
   getTrendData,
-  getTrendCallouts,
 } from '../utils/conditions-metrics';
 import './ConditionsList.css';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api/weather';
-const TREND_HOURS = 12;
 const LLM_MAX_AGE_HOURS = 2;
 const DETAIL_VIEW_METRICS = ['pressure', 'humidity', 'wind', 'precipitation', 'solar', 'temperature'];
 
@@ -196,7 +194,6 @@ const ConditionsList = ({
           const isConditionsCard = m.type === 'conditions';
           const hasDetailView = DETAIL_VIEW_METRICS.includes(m.type);
           const trendData = isConditionsCard ? null : getTrendData(m.type, recent, forecast);
-          const callouts = trendData && trendData.length >= 2 ? getTrendCallouts(m.type, trendData, TREND_HOURS) : null;
 
           const cardContent = (
             <>
@@ -283,13 +280,6 @@ const ConditionsList = ({
                             color="var(--trendline-stroke)"
                           />
                         </div>
-                        {callouts && (
-                          <div className="conditions-list-trend-callouts">
-                            <span className="conditions-list-trend-lo-hi">
-                              Lo {callouts.lo}{callouts.unit} · Hi {callouts.hi}{callouts.unit}
-                            </span>
-                          </div>
-                        )}
                       </div>
                     )}
                   </>

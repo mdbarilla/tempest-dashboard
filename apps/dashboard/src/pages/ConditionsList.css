@@ -351,7 +351,7 @@ a.conditions-list-card {
   justify-content: flex-start;
   flex: 1;
   min-width: 0;
-  gap: var(--space-3);
+  gap: var(--space-2);
   padding-left: var(--space-3);
 }
 
@@ -359,7 +359,8 @@ a.conditions-list-card {
   .conditions-list-right {
     padding: 0;
     padding-left: 0;
-    align-items: flex-end;
+    align-items: flex-start;
+    gap: var(--space-2);
   }
 }
 
@@ -531,20 +532,15 @@ a.conditions-list-card {
   /* Breathing room after divider; tight gap to trend; scroll if content overflows */
   .conditions-list-right {
     padding-left: var(--space-3);
-    gap: var(--space-1);
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+    gap: var(--space-2);
+    flex-direction: row;
+    align-items: flex-start;
+    overflow: visible;
   }
 
-  .conditions-list-right::-webkit-scrollbar {
-    display: none;
-  }
-
-  /* Protect value column from chart encroachment */
   .conditions-list-value-block {
-    min-width: var(--history-conditions-min-width, 7rem);
-    flex-shrink: 0;
+    min-width: 0;
+    flex: 1 1 auto;
   }
 
   /* Compact primary values */
@@ -580,6 +576,15 @@ a.conditions-list-card {
   .conditions-list-condition-block {
     min-width: 0;
   }
+
+  .conditions-list-trend {
+    display: flex;
+    width: 116px;
+    min-width: 116px;
+    margin-left: var(--space-2);
+    margin-right: var(--space-2);
+    margin-top: 0;
+  }
 }
 
 @media (min-width: 768px) {
@@ -602,9 +607,10 @@ a.conditions-list-card {
   flex-direction: column;
   align-items: flex-end;
   gap: var(--space-1);
-  width: 140px;
-  min-width: 140px;
-  margin-left: auto;
+  width: 124px;
+  min-width: 124px;
+  margin-left: var(--space-2);
+  margin-top: -0.25rem;
 }
 
 .conditions-list-trend-viz {
@@ -690,24 +696,9 @@ a.conditions-list-card {
     overflow: hidden;
   }
 
-  /* Space between value-block and trend */
-  .conditions-list-right {
-    gap: var(--space-3) !important;
-  }
-
   /* Fix clipped descenders on unit text (e.g. "inHg") */
   .conditions-list-value {
     line-height: 1.15 !important;
     overflow: visible !important;
-  }
-
-  /* Left-align sparklines and callouts with sparkline start */
-  .conditions-list-trend {
-    align-items: flex-start !important;
-    margin-left: 0 !important;
-  }
-
-  .conditions-list-trend-viz {
-    justify-content: flex-start !important;
   }
 }

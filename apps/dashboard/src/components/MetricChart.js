@@ -7,16 +7,17 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  ReferenceLine,
-  ReferenceDot
+  ReferenceLine
 } from 'recharts';
 import { formatTime, getMetricConfig, formatTooltipValue, formatTooltipValueParts } from '../utils/chartHelpers';
 import './MetricChart.css';
 
 const PLOT_LEFT = 50;
 const PLOT_RIGHT = 24;
+const MOBILE_PLOT_LEFT = 8;
+const MOBILE_PLOT_RIGHT = 0;
 
-const MetricChart = React.memo(({ data, metric, hours, manualEntries = [], pressureUnit, onHoverChange, useClickTooltip, activePoint, stableTimeEnd }) => {
+const MetricChart = React.memo(({ data, metric, hours, manualEntries = [], pressureUnit, onHoverChange, useClickTooltip, stableTimeEnd, hideYAxis = false, customYAxisTicks, customYAxisDomain }) => {
   const config = useMemo(
     () => getMetricConfig(metric, metric === 'pressure' ? { pressureUnit: pressureUnit || 'inHg' } : {}),
     [metric, pressureUnit]
@@ -60,15 +61,17 @@ const MetricChart = React.memo(({ data, metric, hours, manualEntries = [], press
   };
 
   const containerRef = useRef(null);
+  const plotLeft = hideYAxis ? MOBILE_PLOT_LEFT : PLOT_LEFT;
+  const plotRight = hideYAxis ? MOBILE_PLOT_RIGHT : PLOT_RIGHT;
   const handleChartClick = useCallback((e) => {
     if (!useClickTooltip || !onHoverChange || !chartData?.length) return;
     const el = containerRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
     const x = e.clientX - rect.left;
-    const plotWidth = rect.width - PLOT_LEFT - PLOT_RIGHT;
+    const plotWidth = rect.width - plotLeft - plotRight;
     if (plotWidth <= 0) return;
-    const relativeX = x - PLOT_LEFT;
+    const relativeX = x - plotLeft;
     const t = Math.max(0, Math.min(1, relativeX / plotWidth));
     const index = Math.round(t * (chartData.length - 1));
     const idx = Math.max(0, Math.min(index, chartData.length - 1));
@@ -88,7 +91,7 @@ const MetricChart = React.memo(({ data, metric, hours, manualEntries = [], press
       formattedValueUnit,
       manualEntry
     });
-  }, [useClickTooltip, onHoverChange, chartData, metric, pressureUnit]);
+  }, [useClickTooltip, onHoverChange, chartData, metric, pressureUnit, plotLeft, plotRight]);
 
   // Format x-axis labels: 24h = time only; 3d/7d = day + time on separate lines
   const formatTickValue = (value) => {
@@ -163,12 +166,14 @@ const MetricChart = React.memo(({ data, metric, hours, manualEntries = [], press
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={chartData}
-          margin={{ top: 28, right: 24, left: 10, bottom: 44 }}
-          accessibilityLayer
+          margin={{ top: 20, right: hideYAxis ? 0 : 24, left: hideYAxis ? 2 : 10, bottom: 40 }}
+          accessibilityLayer={!useClickTooltip}
         >
           <CartesianGrid
             strokeDasharray="3 3"
             stroke="var(--border-light)"
+            vertical
+            horizontal
           />
           <XAxis
             dataKey="timestamp"
@@ -183,13 +188,15 @@ const MetricChart = React.memo(({ data, metric, hours, manualEntries = [], press
             height={hours > 168 ? 56 : hours > 24 ? 52 : 40}
           />
           <YAxis
+            hide={hideYAxis}
             stroke="var(--border-light)"
             fontSize={12}
             tickLine={false}
             axisLine={false}
-            domain={config.domain}
+            domain={customYAxisDomain || config.domain}
+            ticks={customYAxisTicks}
             tick={{ fill: 'var(--text-secondary)', fontSize: 12 }}
-            label={{
+            label={hideYAxis ? undefined : {
               value: config.yAxisLabel,
               angle: -90,
               position: 'insideLeft',
@@ -219,17 +226,6 @@ const MetricChart = React.memo(({ data, metric, hours, manualEntries = [], press
             animationDuration={350}
             animationEasing="ease-out"
           />
-          {/* Mobile tap: show a dot at the selected point */}
-          {useClickTooltip && activePoint != null && activePoint.timestamp != null && activePoint.value != null && (
-            <ReferenceDot
-              x={activePoint.timestamp}
-              y={activePoint.value}
-              r={6}
-              fill="var(--trendline-stroke)"
-              stroke="var(--bg-primary)"
-              strokeWidth={2}
-            />
-          )}
           {/* Freezing line (32°F) on temperature chart */}
           {metric === 'temperature' && (
             <ReferenceLine
@@ -238,6 +234,12 @@ const MetricChart = React.memo(({ data, metric, hours, manualEntries = [], press
               strokeDasharray="4 4"
               strokeWidth={1}
               strokeOpacity={0.35}
+              label={{
+                value: 'Freezing 32°F',
+                position: 'insideTopLeft',
+                fill: 'var(--text-secondary)',
+                fontSize: 10
+              }}
             />
           )}
           {/* Manual precipitation entries: dotted lines on all ranges; labels only on 24h/3-day (7-day labels don't render well) */}

@@ -550,7 +550,7 @@ ssh mbarilla@towerhill.local "cd ~/deployment/backend && (pm2 restart tempest-ba
 
 ### Restart Pi services after power outage (from Mac)
 ```bash
-cd /path/to/Tempest
+cd /Users/mbarilla/Library/Mobile Documents/com~apple~CloudDocs/Projects/Tempest
 ssh mbarilla@towerhill.local 'bash -s' < scripts/restart-pi-after-power.sh
 ```
 

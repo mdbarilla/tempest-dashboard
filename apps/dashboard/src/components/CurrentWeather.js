@@ -167,13 +167,7 @@ const CurrentWeather = ({ current, forecast, lastUpdate, alerts = [], atmosphere
   const isNight = isCurrentlyNight();
 
   const handleCorrection = async (reportedCondition, precipPct = null) => {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/b82af7dd-022a-4b64-a61f-996ea387a2e5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CurrentWeather.js:handleCorrection:entry',message:'handleCorrection called',data:{reportedCondition,url:`${API_BASE_URL}/correction`},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
     try {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/b82af7dd-022a-4b64-a61f-996ea387a2e5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CurrentWeather.js:handleCorrection:beforePost',message:'before axios.post',data:{},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
       await axios.post(`${API_BASE_URL}/correction`, {
         timestamp: current.timestamp,
         reportedCondition,
@@ -182,15 +176,9 @@ const CurrentWeather = ({ current, forecast, lastUpdate, alerts = [], atmosphere
         precip_pct_at_correction: precipPct != null ? Number(precipPct) : null
       });
 
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/b82af7dd-022a-4b64-a61f-996ea387a2e5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CurrentWeather.js:handleCorrection:afterPost',message:'POST succeeded, about to reload',data:{},timestamp:Date.now(),hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
       // Refresh the page to get updated conditions
       window.location.reload();
     } catch (error) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/b82af7dd-022a-4b64-a61f-996ea387a2e5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CurrentWeather.js:handleCorrection:catch',message:'POST failed',data:{errMsg:String(error?.message||error),status:error?.response?.status},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
-      // #endregion
       console.error('Error submitting correction:', error);
       throw error;
     }
@@ -540,30 +528,6 @@ const CurrentWeather = ({ current, forecast, lastUpdate, alerts = [], atmosphere
         })()}
         </div>
       </div>
-      {/* Debug panel: development only — hidden in production */}
-      {process.env.NODE_ENV === 'development' && isLocal && ((onRefreshAtmosphere && atmosphere?.description === 'Initializing art engine...') || !atmosphere?.description) && (
-        <div className="atmosphere-debug-panel">
-          {onRefreshAtmosphere && atmosphere?.description === 'Initializing art engine...' && (
-            <button type="button" className="atmosphere-refresh" onClick={onRefreshAtmosphere}>
-              Refresh atmosphere
-            </button>
-          )}
-          {process.env.NODE_ENV === 'development' && atmosphere?.description === 'Initializing art engine...' && (
-            <div className="atmosphere-debug">
-              LLM not ready. Bridge runs ~10 min after UDP. Check: curl http://towerhill.local:5000/weather and journalctl -u weather-bridge on the Pi. Backend: /api/weather/atmosphere?debug=1
-            </div>
-          )}
-          {process.env.NODE_ENV === 'development' && !atmosphere?.description && (
-            <div className="atmosphere-debug">
-              Atmosphere: not shown — {atmosphere?.error
-                ? `${atmosphere.error}. Bridge runs on the Pi at towerhill.local:5000 (not localhost:5000). From Mac: curl http://towerhill.local:5000/weather. On Pi: sudo systemctl status weather-bridge.`
-                : atmosphere == null
-                  ? 'atmosphere is null. Backend cannot reach the bridge on :5000. Debug: curl "http://localhost:3001/api/weather/atmosphere?debug=1"'
-                  : 'atmosphere.description is empty'}
-            </div>
-          )}
-        </div>
-      )}
       {stormDetailOpen && <StormWarningDetail alerts={alerts} onClose={() => setStormDetailOpen(false)} />}
       <AtmosphereFeedbackModal
         isOpen={feedbackModalOpen}

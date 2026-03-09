@@ -9,6 +9,7 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 
 // Import routes
 const weatherRoutes = require('./api/weather');
+const gardenRoutes = require('./api/garden');
 const googleHomeWebhook = require('./webhooks/google-home');
 
 // Import services
@@ -50,6 +51,7 @@ app.get('/health', (req, res) => {
 
 // API Routes
 app.use('/api/weather', weatherRoutes);
+app.use('/api/garden', gardenRoutes);
 
 // Webhook Routes
 app.use('/webhooks/google-home', googleHomeWebhook);

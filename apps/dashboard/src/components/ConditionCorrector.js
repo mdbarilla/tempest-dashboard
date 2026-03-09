@@ -62,29 +62,14 @@ const ConditionCorrector = ({ currentCondition, temperature, timestamp, currentP
 
   const handleSubmit = async () => {
     if (!selectedCondition) return;
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/b82af7dd-022a-4b64-a61f-996ea387a2e5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ConditionCorrector.js:handleSubmit:entry',message:'handleSubmit called',data:{selectedCondition,hasOnCorrect:typeof onCorrect==='function'},timestamp:Date.now(),hypothesisId:'E'})}).catch(()=>{});
-    // #endregion
     setIsSubmitting(true);
     try {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/b82af7dd-022a-4b64-a61f-996ea387a2e5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ConditionCorrector.js:handleSubmit:beforeAwait',message:'before await onCorrect',data:{},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
       await onCorrect(selectedCondition, currentPrecipPct != null ? Number(currentPrecipPct) : null);
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/b82af7dd-022a-4b64-a61f-996ea387a2e5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ConditionCorrector.js:handleSubmit:afterAwait',message:'onCorrect resolved (success path)',data:{},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
       setIsOpen(false);
       setSelectedCondition('');
     } catch (error) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/b82af7dd-022a-4b64-a61f-996ea387a2e5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ConditionCorrector.js:handleSubmit:catch',message:'onCorrect threw',data:{errMsg:String(error?.message||error),errName:error?.name},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
-      // #endregion
       console.error('Error submitting correction:', error);
     } finally {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/b82af7dd-022a-4b64-a61f-996ea387a2e5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ConditionCorrector.js:handleSubmit:finally',message:'finally block',data:{},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
-      // #endregion
       setIsSubmitting(false);
     }
   };
@@ -150,6 +135,7 @@ const ConditionCorrector = ({ currentCondition, temperature, timestamp, currentP
           {COMMON_CONDITIONS.map(condition => (
             <button
               key={condition}
+              type="button"
               className={`condition-option ${selectedCondition === condition ? 'selected' : ''}`}
               onClick={() => setSelectedCondition(condition)}
               disabled={isSubmitting}
@@ -165,6 +151,7 @@ const ConditionCorrector = ({ currentCondition, temperature, timestamp, currentP
 
       <div className="corrector-actions">
         <button
+          type="button"
           className="submit-btn"
           onClick={handleSubmit}
           disabled={!selectedCondition || isSubmitting}
@@ -173,6 +160,7 @@ const ConditionCorrector = ({ currentCondition, temperature, timestamp, currentP
         </button>
         {isCorrected && (
           <button
+            type="button"
             className="cancel-btn reset-btn"
             onClick={handleReset}
             disabled={isSubmitting}
@@ -181,6 +169,7 @@ const ConditionCorrector = ({ currentCondition, temperature, timestamp, currentP
           </button>
         )}
         <button
+          type="button"
           className="cancel-btn"
           onClick={() => { setIsOpen(false); setSelectedCondition(''); }}
           disabled={isSubmitting}

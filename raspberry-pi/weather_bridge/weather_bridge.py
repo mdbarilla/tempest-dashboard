@@ -52,16 +52,6 @@ OLLAMA_MODEL = "gemma3:270m"
 OLLAMA_OPTIONS_BASE = {"temperature": 0.5, "repeat_penalty": 1.15, "num_predict": 50}
 OLLAMA_OPTIONS_RETRY = {"temperature": 0.6, "repeat_penalty": 1.2, "num_predict": 50}
 
-# #region agent log
-def _debug_log(message, data, hypothesis_id="H0"):
-    try:
-        with open("/home/mbarilla/weather_bridge/.cursor-debug.log", "a") as f:
-            f.write(json.dumps({"message": message, "data": data, "timestamp": int(time.time() * 1000), "sessionId": "debug-session", "hypothesisId": hypothesis_id, "location": "weather_bridge.py:generate_ai_prompt"}) + "\n")
-    except Exception:
-        pass
-# #endregion
-
-
 def calculate_condition(lux, precip, temp, humidity):
     if temp <= 2 and humidity > 85:
         return "Snow Possible"
@@ -586,9 +576,6 @@ def generate_ai_prompt():
             # If LLM returned empty, retry once with a shorter, more explicit prompt
             from_empty_retry = False
             if not value:
-                # #region agent log
-                _debug_log("empty_before_r2", {"value": value, "cond": cond}, "H2")
-                # #endregion
                 from_empty_retry = True
                 r2 = ollama.chat(
                     model=OLLAMA_MODEL,
@@ -701,19 +688,10 @@ def generate_ai_prompt():
             has_wrong_time = _has_wrong_time_phrase(value, h) if value else False
             is_repetitive = _is_too_similar_to_recent(value, threshold=0.7) if value else False
             has_meta = _has_meta_commentary(value) if value else False
-            # #region agent log
-            is_cond = _is_condition_only(value, cond) if value else False
-            has_num = _has_numbers(value) if value else False
-            starts_weather = _starts_with_weather_is(value) if value else False
-            _debug_log("before_accept_check", {"value": value, "len_value": len(value) if value else 0, "cond": cond, "is_condition_only": is_cond, "has_numbers": has_num, "starts_weather_is": starts_weather, "has_humid": has_humid_word, "has_calm": has_calm_word, "has_wrong_time": has_wrong_time, "is_repetitive": is_repetitive, "has_meta_commentary": has_meta, "current_hour": h, "contradicts_nws": contradicts, "from_empty_retry": from_empty_retry, "did_condition_only_retry": did_condition_only_retry, "did_humid_retry": did_humid_retry, "did_calm_retry": did_calm_retry, "did_weather_is_retry": did_weather_is_retry, "did_time_phrase_retry": did_time_phrase_retry, "did_repetition_retry": did_repetition_retry, "did_contradict_retry": did_contradict_retry}, "H1,H3,H5")
-            # #endregion
             # Loosened: removed _starts_with_weather_is check - now allowed but discouraged via prompt
             if value and len(value) >= 2 and not _is_condition_only(value, cond) and not _has_numbers(value) and not has_humid_word and not has_calm_word and not has_wrong_time and not is_repetitive and not contradicts and not has_meta:
                 weather_store["ai_prompt"] = value
                 weather_store["ai_prompt_generated_at"] = int(time.time())
-                # #region agent log
-                _debug_log("accept_ai_prompt", {"value": value, "generated_at": weather_store["ai_prompt_generated_at"]}, "H2")
-                # #endregion
                 # Add to recent phrases (keep last 5)
                 normalized = _normalize_phrase(value)
                 if normalized:
@@ -722,34 +700,16 @@ def generate_ai_prompt():
                 last_ai_error = None
             else:
                 prev = (weather_store.get("ai_prompt") or "").strip()
-                # #region agent log
-                _debug_log("else_reject", {"value": value, "len_value": len(value) if value else 0, "cond": cond, "is_condition_only": is_cond, "has_numbers": has_num, "starts_weather_is": starts_weather, "has_humid": has_humid_word, "has_calm": has_calm_word, "has_wrong_time": has_wrong_time, "is_repetitive": is_repetitive, "has_meta_commentary": has_meta, "current_hour": h, "contradicts_nws": contradicts, "from_empty_retry": from_empty_retry, "did_condition_only_retry": did_condition_only_retry, "did_humid_retry": did_humid_retry, "did_calm_retry": did_calm_retry, "did_weather_is_retry": did_weather_is_retry, "did_time_phrase_retry": did_time_phrase_retry, "did_repetition_retry": did_repetition_retry, "did_contradict_retry": did_contradict_retry, "prev": prev}, "H1,H2,H3,H5")
-                # #endregion
                 reason = "meta-commentary" if has_meta else ("calm/peaceful despite NWS" if contradicts else ("contains 'humid'" if has_humid_word else ("contains 'calm'/forbidden words" if has_calm_word else ("wrong time phrase" if has_wrong_time else ("too similar to recent phrases" if is_repetitive else "empty, too short, condition-only, or contains numbers")))))
                 print(f"AI returned {reason}; keeping previous ai_prompt.")
-                # #region agent log
-                _debug_log("reject_fallback", {"reason": reason, "value": value, "prev": prev, "has_prev": bool(prev), "prev_is_init": prev == "Initializing art engine..." if prev else False, "will_set_fallback": not prev or prev == "Initializing art engine..."}, "H2")
-                # #endregion
                 if not prev or prev == "Initializing art engine...":
                     weather_store["ai_prompt"] = "Condition summary unavailable."
-                    # #region agent log
-                    _debug_log("set_fallback", {"reason": reason, "prev": prev, "ai_prompt": weather_store["ai_prompt"]}, "H2")
-                    # #endregion
         except Exception as e:
-            # #region agent log
-            _debug_log("except", {"error": str(e), "error_type": type(e).__name__}, "H4")
-            # #endregion
             last_ai_error = str(e)
             print(f"AI Error: {e}")
             prev = (weather_store.get("ai_prompt") or "").strip()
-            # #region agent log
-            _debug_log("except_fallback_check", {"prev": prev, "has_prev": bool(prev), "prev_is_init": prev == "Initializing art engine..." if prev else False, "will_set_fallback": not prev or prev == "Initializing art engine..."}, "H2,H4")
-            # #endregion
             if not prev or prev == "Initializing art engine...":
                 weather_store["ai_prompt"] = "Condition summary unavailable."
-                # #region agent log
-                _debug_log("set_fallback_exception", {"error": str(e), "ai_prompt": weather_store["ai_prompt"]}, "H2,H4")
-                # #endregion
         threading.Event().wait(600)
 
 
@@ -787,10 +747,6 @@ def get_weather():
     out["art_engine_status"] = "waiting_udp" if not data_ready_event.is_set() else "running"
     out["last_ai_error"] = last_ai_error
     out["ollama_model"] = OLLAMA_MODEL
-    # Add debug info: if ai_prompt is the fallback, include why it might have been set
-    if out.get("ai_prompt") == "Condition summary unavailable.":
-        out["_debug_fallback_reason"] = "No previous ai_prompt or was 'Initializing art engine...'. LLM generation may have failed or all outputs were rejected."
-        out["_debug_has_prev"] = bool(weather_store.get("ai_prompt") and weather_store.get("ai_prompt") != "Initializing art engine...")
     return jsonify(out)
 
 

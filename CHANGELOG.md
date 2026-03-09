@@ -23,6 +23,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deferred
 - **Mobile list view row swipeability**: Not a top priority; other changes deployed first.
 
+## [1.5.1] - 2026-03-05
+
+### Fixed
+- **Condition editing on mobile**: Removed transient instrumentation that could block submit flow and ensured condition-correction actions use explicit button semantics.
+- **Metric detail mobile chart UX**: Fixed duplicate/offset y-axis behavior, improved tap tooltip placement, removed tap outline artifacts, and reduced chart edge clipping.
+- **History page reliability**: Corrected local-date handling, removed Dew Point/Cloud Cover columns, and split observed vs forecast rows with clear section labels and subtle forecast background treatment.
+- **Forecast continuity in history**: Hourly history generation now prioritizes hourly forecast sources before daily fallback to prevent flatlined future temperature rows.
+- **Conditions list polish**: Improved sparkline alignment in cards and removed list-view Lo/Hi trend labels for cleaner presentation.
+- **Garden DB startup safety**: Backend now falls back to local `backend/data/garden.db` when a configured `GARDEN_DB_PATH` directory is not writable, preventing PM2 restart loops.
+
+### Changed
+- **Resilience when Tempest API is unavailable**: `GET /api/weather/complete` now falls back to recent local observations/forecast scaffolding instead of hard failing.
+- **Release versioning**: Dashboard and backend package versions bumped to `1.5.1`.
+- **Bridge/deploy cleanup**: Removed bridge-side agent-log instrumentation and updated bridge deploy scripts to point to systemd logs.
+
+### Technical
+- `apps/dashboard/src/components/ConditionCorrector.js`: removed debug fetch calls, added explicit `type="button"` controls.
+- `apps/dashboard/src/components/MetricChart.js`, `apps/dashboard/src/pages/MetricDetailView.js`, `apps/dashboard/src/pages/MetricDetailView.css`: unified mobile axis/tick behavior and chart layout spacing.
+- `apps/dashboard/src/pages/HistoryPage.js`, `apps/dashboard/src/pages/HistoryPage.css`: local date utility, observed/forecast section rows, column simplification.
+- `backend/api/weather.js`: `/complete` local fallback path and hourly forecast priority improvements.
+- `raspberry-pi/weather_bridge/weather_bridge.py`: removed debug log writer calls and extra debug response fields.
+
 ## [1.5.0] - 2026-02-18
 
 ### Added

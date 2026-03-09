@@ -44,5 +44,5 @@ ssh "$HOST" "sudo systemctl status weather-bridge --no-pager -l" | head -15
 echo ""
 echo "✓ Deployment complete!"
 echo ""
-echo "View logs with:"
-echo "  ssh $HOST 'tail -f ~/weather_bridge/.cursor-debug.log'"
+echo "View service logs with:"
+echo "  ssh $HOST 'sudo journalctl -u weather-bridge -f'"

@@ -11,6 +11,7 @@ import HistoryPage from './pages/HistoryPage';
 import ChatPage from './pages/ChatPage';
 import MetricDetailView from './pages/MetricDetailView';
 import BottomNav from './components/BottomNav';
+import WhatsGrowing from './components/WhatsGrowing';
 import './styles/App.css';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api/weather';
@@ -453,6 +454,7 @@ function App() {
         onPrecipAddClick={() => navigate('/conditions/precipitation', { state: { from: 'dashboard', view: 'add' } })}
         onRefresh={() => fetchWeather(0, false)}
       />
+      <WhatsGrowing />
       <Forecast forecast={weatherData.forecast} />
     </>
   );

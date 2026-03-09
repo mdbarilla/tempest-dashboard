@@ -77,6 +77,107 @@ const parseSqliteUtc = (val) => {
 
 const METRIC_ORDER = ['temperature', 'pressure', 'humidity', 'wind', 'precipitation', 'solar'];
 
+function formatMobileAxisValue(metricType, value, pressureUnit = 'inHg') {
+  if (value == null || Number.isNaN(value)) return '--';
+  if (metricType === 'pressure') return pressureUnit === 'mb' ? value.toFixed(1) : value.toFixed(2);
+  if (metricType === 'precipitation') return value.toFixed(2);
+  if (metricType === 'humidity' || metricType === 'temperature' || metricType === 'wind' || metricType === 'solar' || metricType === 'uv') {
+    return String(Math.round(value));
+  }
+  return String(Math.round(value * 10) / 10);
+}
+
+function roundDownToStep(value, step, offset = 0) {
+  return Math.floor((value - offset) / step) * step + offset;
+}
+
+function roundUpToStep(value, step, offset = 0) {
+  return Math.ceil((value - offset) / step) * step + offset;
+}
+
+function buildNiceYAxisScale(metricType, values, pressureUnit = 'inHg') {
+  if (!Array.isArray(values) || values.length === 0) return null;
+  const finiteValues = values.filter((v) => Number.isFinite(v));
+  if (!finiteValues.length) return null;
+
+  const rawMin = Math.min(...finiteValues);
+  const rawMax = Math.max(...finiteValues);
+  const range = Math.max(rawMax - rawMin, 0);
+
+  let min;
+  let max;
+  let step;
+  let offset = 0;
+
+  switch (metricType) {
+    case 'temperature':
+      step = 10;
+      offset = 5;
+      min = roundDownToStep(rawMin - 2, step, offset);
+      max = roundUpToStep(rawMax + 2, step, offset);
+      if (max - min < 20) max = min + 20;
+      break;
+    case 'humidity':
+      step = 10;
+      min = 0;
+      max = 100;
+      break;
+    case 'wind':
+      step = 5;
+      min = Math.max(0, roundDownToStep(rawMin - 2, step));
+      max = roundUpToStep(rawMax + 2, step);
+      if (max - min < 15) max = min + 15;
+      break;
+    case 'pressure':
+      if (pressureUnit === 'mb') {
+        step = 2;
+        min = roundDownToStep(rawMin - 0.6, step);
+        max = roundUpToStep(rawMax + 0.6, step);
+      } else {
+        step = 0.05;
+        min = roundDownToStep(rawMin - 0.02, step);
+        max = roundUpToStep(rawMax + 0.02, step);
+      }
+      if (max <= min) max = min + step * 4;
+      break;
+    case 'precipitation':
+      step = range > 2 ? 0.25 : range > 1 ? 0.1 : 0.05;
+      min = Math.max(0, roundDownToStep(rawMin - step, step));
+      max = roundUpToStep(rawMax + step, step);
+      if (max <= min) max = min + step * 4;
+      break;
+    case 'solar':
+      step = 100;
+      min = Math.max(0, roundDownToStep(rawMin - 50, step));
+      max = roundUpToStep(rawMax + 50, step);
+      if (max - min < 300) max = min + 300;
+      break;
+    case 'uv':
+      step = 1;
+      min = 0;
+      max = Math.max(6, roundUpToStep(rawMax + 1, step));
+      break;
+    default:
+      step = range > 50 ? 10 : range > 10 ? 5 : range > 2 ? 1 : 0.5;
+      min = roundDownToStep(rawMin - step * 0.5, step);
+      max = roundUpToStep(rawMax + step * 0.5, step);
+      if (max <= min) max = min + step * 4;
+      break;
+  }
+
+  const ticks = [];
+  const maxTicks = 16;
+  for (let t = min; t <= max + step / 2 && ticks.length <= maxTicks; t += step) {
+    const precision = step < 1 ? 2 : 0;
+    ticks.push(Number(t.toFixed(precision)));
+  }
+
+  return {
+    domain: [min, max],
+    ticks
+  };
+}
+
 const MetricDetailView = ({ current, forecast, metricOverride, connectionStatus = 'online', onRetryConnection, onRefresh, isLocal = false }) => {
   const paramsMetric = useParams().metric;
   const metric = metricOverride != null ? metricOverride : paramsMetric;
@@ -364,6 +465,39 @@ const MetricDetailView = ({ current, forecast, metricOverride, connectionStatus 
   }, [currentValue, safeMetric, current?.pressure?.inHg, data?.data]);
 
   const secondaryText = useMemo(() => getSecondaryText(), [getSecondaryText]);
+  const chartSeries = useMemo(() => {
+    const points = chartDataToShow?.data || [];
+    if (chartMetricToShow === 'pressure' && pressureUnit === 'inHg') {
+      return points.map((d) => ({ ...d, value: d.value * MB_TO_INHG }));
+    }
+    return points;
+  }, [chartDataToShow?.data, chartMetricToShow, pressureUnit]);
+
+  const yAxisScale = useMemo(() => {
+    if (!chartSeries.length) return null;
+    const numericValues = chartSeries.map((d) => Number(d.value));
+    return buildNiceYAxisScale(chartMetricToShow, numericValues, pressureUnit);
+  }, [chartSeries, chartMetricToShow, pressureUnit]);
+
+  const mobileAxisData = useMemo(() => {
+    if (!yAxisScale) return null;
+    const axisConfig = getMetricConfig(chartMetricToShow, chartMetricToShow === 'pressure' ? { pressureUnit } : {});
+    const allTicksDesc = [...yAxisScale.ticks].sort((a, b) => b - a);
+    const maxRailLabels = 6;
+    let railTicks = allTicksDesc;
+    if (allTicksDesc.length > maxRailLabels) {
+      railTicks = Array.from({ length: maxRailLabels }, (_, i) => {
+        const idx = Math.round((i * (allTicksDesc.length - 1)) / (maxRailLabels - 1));
+        return allTicksDesc[idx];
+      }).filter((v, i, arr) => arr.indexOf(v) === i);
+    }
+    return {
+      ticks: railTicks,
+      labels: railTicks.map((t) => formatMobileAxisValue(chartMetricToShow, t, pressureUnit)),
+      domain: yAxisScale.domain,
+      label: axisConfig.yAxisLabel
+    };
+  }, [yAxisScale, chartMetricToShow, pressureUnit]);
 
   // Early return after all hooks
   if (!metric) {
@@ -463,6 +597,30 @@ const MetricDetailView = ({ current, forecast, metricOverride, connectionStatus 
               aria-label={safeMetric === 'precipitation' ? 'Precipitation' : `${config.label} chart showing ${hours <= 24 ? '24 hour' : hours <= 72 ? '3 day' : '7 day'} historical data`}
             >
               <div className="metric-detail-chart-controls">
+                {(safeMetric !== 'precipitation' || effectivePrecipView === 'chart') && isMobile && (
+                  <div className="metric-detail-chart-hover-badge metric-detail-chart-hover-badge--controls" aria-live="polite">
+                    {hoveredPoint ? (
+                      <div className="metric-detail-chart-hover-badge__value">
+                        <span className="chart-hover-time">{hoveredPoint.formattedTime}</span>
+                        <span className="chart-hover-value">
+                          {hoveredPoint.formattedValueNumber}
+                          {hoveredPoint.formattedValueUnit && (
+                            <span className="chart-hover-value-unit">{hoveredPoint.formattedValueUnit}</span>
+                          )}
+                        </span>
+                        {hoveredPoint.manualEntry && (
+                          <span className="chart-hover-manual">
+                            Manual: {hoveredPoint.manualEntry.amountInches.toFixed(2)} in ({hoveredPoint.manualEntry.type})
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="metric-detail-chart-hover-badge__placeholder">
+                        Tap chart for hourly details
+                      </span>
+                    )}
+                  </div>
+                )}
                 {safeMetric === 'precipitation' && isLocal && (
                   <div className="metric-detail-precip-actions">
                     <button
@@ -710,28 +868,66 @@ const MetricDetailView = ({ current, forecast, metricOverride, connectionStatus 
                 className="metric-detail-chart-area"
                 onMouseLeave={() => !isMobile && setHoveredPoint(null)}
               >
+                {isMobile && mobileAxisData && (
+                  <aside className="metric-detail-mobile-axis-rail" aria-hidden="true">
+                    <div className="metric-detail-mobile-axis-title">{mobileAxisData.label}</div>
+                    <div className="metric-detail-mobile-axis-scale">
+                      {mobileAxisData.labels.map((label, idx) => (
+                        <span key={`axis-${idx}`}>{label}</span>
+                      ))}
+                    </div>
+                  </aside>
+                )}
                 <div className="metric-detail-chart-scroll">
                   <div className="metric-detail-chart-scroll-inner">
                     <MetricChart
-                      data={chartMetricToShow === 'pressure' && pressureUnit === 'inHg'
-                        ? (chartDataToShow.data || []).map(d => ({ ...d, value: d.value * MB_TO_INHG }))
-                        : (chartDataToShow.data || [])}
+                      data={chartSeries}
                       metric={chartMetricToShow}
                       hours={hours}
                       manualEntries={chartDataToShow.manualEntries || []}
                       pressureUnit={chartMetricToShow === 'pressure' ? pressureUnit : undefined}
                       onHoverChange={setHoveredPoint}
                       useClickTooltip={isMobile}
-                      activePoint={isMobile && hoveredPoint?.timestamp != null && hoveredPoint?.value != null
-                        ? { timestamp: hoveredPoint.timestamp, value: hoveredPoint.value }
-                        : null}
                       stableTimeEnd={chartEndTime ?? undefined}
+                      hideYAxis={isMobile}
+                      customYAxisTicks={yAxisScale?.ticks}
+                      customYAxisDomain={yAxisScale?.domain}
                     />
                   </div>
                 </div>
               </div>
 
               <div className="metric-detail-chart-footer">
+                {safeMetric === 'precipitation' && isLocal && (
+                  <div className="metric-detail-precip-actions metric-detail-precip-actions-footer">
+                    <button
+                      type="button"
+                      className={`metric-detail-precip-action-btn ${precipView === 'chart' ? 'active' : ''}`}
+                      onClick={() => setPrecipView('chart')}
+                      aria-pressed={precipView === 'chart'}
+                    >
+                      Graph
+                    </button>
+                    <button
+                      type="button"
+                      className={`metric-detail-precip-action-btn ${precipView === 'add' ? 'active' : ''}`}
+                      onClick={() => setPrecipView('add')}
+                      aria-pressed={precipView === 'add'}
+                    >
+                      <EditIcon className="metric-detail-precip-action-icon" aria-hidden />
+                      <span>Edit</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`metric-detail-precip-action-btn ${precipView === 'history' ? 'active' : ''}`}
+                      onClick={() => setPrecipView('history')}
+                      aria-pressed={precipView === 'history'}
+                    >
+                      <ListIcon className="metric-detail-precip-action-icon" />
+                      <span>History</span>
+                    </button>
+                  </div>
+                )}
                 <nav
                   className="metric-detail-pagination"
                   aria-label="Navigate between metrics"
@@ -749,7 +945,7 @@ const MetricDetailView = ({ current, forecast, metricOverride, connectionStatus 
                     </button>
                   ))}
                 </nav>
-                <div className="metric-detail-chart-hover-badge" aria-live="polite">
+                <div className="metric-detail-chart-hover-badge metric-detail-chart-hover-badge--footer" aria-live="polite">
                   {hoveredPoint ? (
                     <div className="metric-detail-chart-hover-badge__value">
                       <span className="chart-hover-time">{hoveredPoint.formattedTime}</span>

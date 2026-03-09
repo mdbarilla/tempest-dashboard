@@ -6,6 +6,14 @@ import './HistoryPage.css';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api/weather';
 
+function toLocalDateInputValue(dateLike = new Date()) {
+  const d = new Date(dateLike);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function isNightForHour(hourKey) {
   const d = new Date(hourKey * 1000);
   const h = d.getHours();
@@ -15,19 +23,19 @@ function isNightForHour(hourKey) {
 function getMinDate() {
   const d = new Date();
   d.setDate(d.getDate() - 7);
-  return d.toISOString().split('T')[0];
+  return toLocalDateInputValue(d);
 }
 
 function getMaxDate() {
   const d = new Date();
   d.setDate(d.getDate() + 10);
-  return d.toISOString().split('T')[0];
+  return toLocalDateInputValue(d);
 }
 
 const HistoryPage = ({ lastUpdate }) => {
   const { date: paramDate } = useParams();
   const navigate = useNavigate();
-  const today = new Date().toISOString().split('T')[0];
+  const today = toLocalDateInputValue();
   const initialDate = paramDate || today;
 
   const [date, setDate] = useState(initialDate);
@@ -120,9 +128,12 @@ const HistoryPage = ({ lastUpdate }) => {
       )}
 
       {!loading && !error && data && (() => {
-        const hasWeatherData = (r) => !!(r.conditions ?? r.tempF ?? r.feelsLikeF ?? r.humidity ?? r.windSpeed ?? r.pressureInHg ?? r.dewPointF ?? r.precipPct ?? r.precipAmount ?? r.cloudCover);
+        const hasWeatherData = (r) => !!(r.conditions ?? r.tempF ?? r.feelsLikeF ?? r.humidity ?? r.windSpeed ?? r.pressureInHg ?? r.precipPct ?? r.precipAmount);
         const filtered = data.filter((r) => hasWeatherData(r));
         const nowUnix = Math.floor(Date.now() / 1000);
+        const observedRows = filtered.filter((row) => row.timestamp <= nowUnix);
+        const forecastRows = filtered.filter((row) => row.timestamp > nowUnix);
+        const COLUMN_COUNT = 9;
         return (
           <div className="history-table-wrap">
             <table className="history-table" role="grid" aria-label="Hourly weather">
@@ -135,15 +146,22 @@ const HistoryPage = ({ lastUpdate }) => {
                   <th scope="col">Humidity</th>
                   <th scope="col">Wind</th>
                   <th scope="col">Pressure</th>
-                  <th scope="col">Dew Point</th>
                   <th scope="col">Precip</th>
                   <th scope="col">Amount</th>
-                  <th scope="col">Cloud Cover</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((row, i) => (
-                  <tr key={row.timestamp || i} className={row.timestamp > nowUnix ? 'history-row-forecast' : undefined} style={{ animationDelay: `${i * 0.03}s` }}>
+                {observedRows.length > 0 && (
+                  <tr className="history-source-row history-source-row--observed">
+                    <td colSpan={COLUMN_COUNT}>Observed</td>
+                  </tr>
+                )}
+                {observedRows.map((row, i) => (
+                  <tr
+                    key={`obs-${row.timestamp || i}`}
+                    className="history-row-observed"
+                    style={{ animationDelay: `${i * 0.03}s` }}
+                  >
                     <td className="history-cell-time">{row.time}</td>
                     <td className="history-cell-conditions">
                       <span className="history-conditions-inner">
@@ -174,13 +192,59 @@ const HistoryPage = ({ lastUpdate }) => {
                           : '—'}
                     </td>
                     <td>{row.pressureInHg != null ? `${row.pressureInHg} in` : '—'}</td>
-                    <td>{row.dewPointF != null ? `${row.dewPointF} °F` : '—'}</td>
                     <td>{row.precipPct != null ? `${row.precipPct}%` : '—'}</td>
                     <td>
                       {row.precipAmount != null ? `${row.precipAmount} in` : '—'}
                       {row.manualPrecip && <><br /><span className="history-edited-badge" title={`Manual: ${row.manualPrecip.amountInches} in ${row.manualPrecip.type || ''}`}>logged</span></>}
                     </td>
-                    <td>{row.cloudCover != null ? `${row.cloudCover}%` : '—'}</td>
+                  </tr>
+                ))}
+                {forecastRows.length > 0 && (
+                  <tr className="history-source-row history-source-row--forecast">
+                    <td colSpan={COLUMN_COUNT}>Forecast</td>
+                  </tr>
+                )}
+                {forecastRows.map((row, i) => (
+                  <tr
+                    key={`fc-${row.timestamp || i}`}
+                    className="history-row-forecast"
+                    style={{ animationDelay: `${(observedRows.length + i) * 0.03}s` }}
+                  >
+                    <td className="history-cell-time">{row.time}</td>
+                    <td className="history-cell-conditions">
+                      <span className="history-conditions-inner">
+                        {row.conditions ? (
+                          <>
+                            <WeatherIcon
+                              condition={row.conditions}
+                              size={24}
+                              className="history-condition-icon"
+                              isNight={isNightForHour(row.timestamp)}
+                            />
+                            <span>{row.conditions}</span>
+                            {row.corrected && <span className="history-edited-badge" title={`Original: ${row.originalCondition || '—'}`}>edited</span>}
+                          </>
+                        ) : (
+                          <span className="history-cell-empty">—</span>
+                        )}
+                      </span>
+                    </td>
+                    <td className="history-cell-temp">{row.tempF != null ? `${row.tempF} °F` : '—'}</td>
+                    <td className="history-cell-feels">{row.feelsLikeF != null ? `${row.feelsLikeF} °F` : '—'}</td>
+                    <td>{row.humidity != null ? `${row.humidity}%` : '—'}</td>
+                    <td className="history-cell-wind">
+                      {row.windSpeed != null && row.windDirection
+                        ? `${row.windSpeed} mph ${row.windDirection}`
+                        : row.windSpeed != null
+                          ? `${row.windSpeed} mph`
+                          : '—'}
+                    </td>
+                    <td>{row.pressureInHg != null ? `${row.pressureInHg} in` : '—'}</td>
+                    <td>{row.precipPct != null ? `${row.precipPct}%` : '—'}</td>
+                    <td>
+                      {row.precipAmount != null ? `${row.precipAmount} in` : '—'}
+                      {row.manualPrecip && <><br /><span className="history-edited-badge" title={`Manual: ${row.manualPrecip.amountInches} in ${row.manualPrecip.type || ''}`}>logged</span></>}
+                    </td>
                   </tr>
                 ))}
               </tbody>

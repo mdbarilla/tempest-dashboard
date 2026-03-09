@@ -7,6 +7,90 @@ const db = require('../services/database');
 const nwsAPI = require('../services/nws-api');
 const aiBridge = require('../services/ai-bridge');
 
+function observationRowToCurrent(obs) {
+  if (!obs) return null;
+  return {
+    timestamp: obs.timestamp,
+    temperature: {
+      celsius: obs.temp_celsius,
+      fahrenheit: obs.temp_fahrenheit
+    },
+    feelsLike: {
+      celsius: obs.feels_like_celsius != null ? obs.feels_like_celsius : obs.temp_celsius,
+      fahrenheit: obs.feels_like_fahrenheit != null ? obs.feels_like_fahrenheit : obs.temp_fahrenheit
+    },
+    humidity: obs.humidity,
+    wind: {
+      speed: obs.wind_speed,
+      gust: obs.wind_gust != null ? obs.wind_gust : obs.wind_speed,
+      direction: obs.wind_direction,
+      directionText: obs.wind_direction != null ? tempestAPI.getWindDirection(obs.wind_direction) : null
+    },
+    pressure: {
+      mb: obs.pressure_mb,
+      inHg: obs.pressure_inhg != null ? obs.pressure_inhg : (obs.pressure_mb != null ? obs.pressure_mb * 0.02953 : null)
+    },
+    uv: obs.uv_index,
+    solarRadiation: obs.solar_radiation,
+    precipitation: {
+      today: obs.precip_today != null ? obs.precip_today : 0,
+      lastHour: obs.precip_last_hour != null ? obs.precip_last_hour : 0
+    },
+    lightning: {
+      strikeCount: obs.lightning_strikes != null ? obs.lightning_strikes : 0,
+      lastDistance: 0,
+      lastTime: 0
+    },
+    conditions: obs.conditions || null,
+    icon: null
+  };
+}
+
+async function getFallbackCompleteData() {
+  const nowUnix = Math.floor(Date.now() / 1000);
+  const latest = await db.getLatestObservation(14 * 24 * 3600);
+  if (!latest) {
+    throw new Error('No recent local observations available for fallback');
+  }
+
+  const current = observationRowToCurrent(latest);
+  const hourlyRows = await db.getObservationsByTimestampRange(nowUnix - 24 * 3600, nowUnix, 240);
+  const hourly = (hourlyRows || []).slice(-24).map((row) => ({
+    time: row.timestamp,
+    temperature: {
+      celsius: row.temp_celsius,
+      fahrenheit: row.temp_fahrenheit
+    },
+    conditions: row.conditions || null,
+    icon: null,
+    precipProbability: null,
+    humidity: row.humidity,
+    wind: {
+      speed: row.wind_speed,
+      direction: row.wind_direction
+    }
+  }));
+
+  return {
+    current,
+    forecast: {
+      current: {
+        time: current.timestamp,
+        conditions: current.conditions || null,
+        icon: null
+      },
+      hourly,
+      daily: []
+    },
+    station: {
+      id: tempestAPI.stationId,
+      latitude: tempestAPI.latitude,
+      longitude: tempestAPI.longitude
+    },
+    source: 'local_fallback'
+  };
+}
+
 /**
  * GET /api/weather/current
  * Get current weather conditions
@@ -56,7 +140,13 @@ router.get('/forecast', async (req, res) => {
  */
 router.get('/complete', async (req, res) => {
   try {
-    const data = await tempestAPI.getCompleteWeather();
+    let data;
+    try {
+      data = await tempestAPI.getCompleteWeather();
+    } catch (upstreamError) {
+      console.warn('[complete] Tempest API unavailable, using local fallback:', upstreamError.message);
+      data = await getFallbackCompleteData();
+    }
 
     // Condition correction: 30-min window for legacy; when precip_pct_at_correction is set,
     // persist until current precip % drops below it (e.g. Snow override at 90% stays until precip drops).
@@ -392,7 +482,46 @@ router.get('/hourly/:date', async (req, res) => {
         const daily = complete.forecast?.daily || [];
         const isFutureDate = dayStart > new Date();
 
-        if (isFutureDate && daily.length > 0) {
+        // Prefer hourly forecast data when available. This avoids flat single-value
+        // rows on future days where daily forecast exists but hourly forecast is richer.
+        let hourlyFilled = 0;
+        for (const hour of hourly) {
+          const ts = hour.time;
+          const hourKey = Math.floor(ts / 3600) * 3600;
+          if (hourKey >= startUnix && hourKey <= endUnix) {
+            const idx = Math.floor((hourKey - startUnix) / 3600);
+            const shouldUse = isFutureDate ? true : hourKey > nowUnix;
+            if (idx >= 0 && idx < rows.length && shouldUse) {
+              const tempF = hour.temperature?.fahrenheit != null ? Math.round(hour.temperature.fahrenheit) : null;
+              const humidity = hour.humidity != null ? Math.round(hour.humidity) : null;
+              const dp = (tempF != null && humidity != null) ? dewPoint(tempF, humidity) : null;
+              const dewPointF = dp != null ? Math.round(dp) : null;
+              const windDir = hour.wind?.direction != null ? tempestAPI.getWindDirection(hour.wind.direction) : null;
+              const pressureMb = complete.current?.pressure?.mb;
+              const pressureInHg = pressureMb != null ? (pressureMb * 0.02953).toFixed(2) : null;
+              const conditions = hour.conditions || iconToConditions(hour.icon) || null;
+              rows[idx] = {
+                timestamp: hourKey,
+                time: formatTime(hourKey),
+                conditions,
+                tempF,
+                feelsLikeF: hour.temperature?.fahrenheit != null ? Math.round(hour.temperature.fahrenheit) : null,
+                precipPct: hour.precipProbability != null ? Math.round(hour.precipProbability) : null,
+                precipAmount: '0',
+                cloudCover: null,
+                dewPointF,
+                humidity,
+                windSpeed: hour.wind?.speed != null ? Math.round(hour.wind.speed * 10) / 10 : null,
+                windDirection: windDir,
+                pressureInHg
+              };
+              hourlyFilled++;
+            }
+          }
+        }
+
+        // Fallback for future dates when hourly isn't available for that day.
+        if (isFutureDate && hourlyFilled === 0 && daily.length > 0) {
           const todayStart = new Date();
           todayStart.setHours(0, 0, 0, 0);
           const daysFromToday = Math.round((dayStart - todayStart) / (24 * 60 * 60 * 1000));
@@ -424,39 +553,6 @@ router.get('/hourly/:date', async (req, res) => {
               };
             }
           }
-        } else {
-        for (const hour of hourly) {
-          const ts = hour.time;
-          const hourKey = Math.floor(ts / 3600) * 3600;
-          if (hourKey >= startUnix && hourKey <= endUnix) {
-            const idx = Math.floor((hourKey - startUnix) / 3600);
-            if (idx >= 0 && idx < rows.length && hourKey > nowUnix) {
-              const tempF = hour.temperature?.fahrenheit != null ? Math.round(hour.temperature.fahrenheit) : null;
-              const humidity = hour.humidity != null ? Math.round(hour.humidity) : null;
-              const dp = (tempF != null && humidity != null) ? dewPoint(tempF, humidity) : null;
-              const dewPointF = dp != null ? Math.round(dp) : null;
-              const windDir = hour.wind?.direction != null ? tempestAPI.getWindDirection(hour.wind.direction) : null;
-              const pressureMb = complete.current?.pressure?.mb;
-              const pressureInHg = pressureMb != null ? (pressureMb * 0.02953).toFixed(2) : null;
-              const conditions = hour.conditions || iconToConditions(hour.icon) || null;
-              rows[idx] = {
-                timestamp: hourKey,
-                time: formatTime(hourKey),
-                conditions,
-                tempF,
-                feelsLikeF: hour.temperature?.fahrenheit != null ? Math.round(hour.temperature.fahrenheit) : null,
-                precipPct: hour.precipProbability != null ? Math.round(hour.precipProbability) : null,
-                precipAmount: '0',
-                cloudCover: null,
-                dewPointF,
-                humidity,
-                windSpeed: hour.wind?.speed != null ? Math.round(hour.wind.speed * 10) / 10 : null,
-                windDirection: windDir,
-                pressureInHg
-              };
-            }
-          }
-        }
         }
       } catch (err) {
         console.warn('[hourly] Forecast merge failed:', err.message);
