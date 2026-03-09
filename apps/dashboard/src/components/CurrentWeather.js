@@ -23,6 +23,13 @@ const MODAL_STORAGE_KEYS = {
   feedback: 'tempest-feedback-modal-open',
 };
 
+function isLlmEnabledByUrl() {
+  if (typeof window === 'undefined') return false;
+  const llmParam = new URLSearchParams(window.location.search).get('llm');
+  if (!llmParam) return false;
+  return ['1', 'true', 'on', 'yes'].includes(String(llmParam).toLowerCase());
+}
+
 function getStoredModalOpen(key) {
   try {
     return sessionStorage.getItem(key) === '1';
@@ -98,6 +105,7 @@ const CurrentWeather = ({ current, forecast, lastUpdate, alerts = [], atmosphere
   // Hide LLM line when generatedAt is older than LLM_MAX_AGE_HOURS (avoids "cold and clear at night" at 10 AM from stale/cached run)
   const generatedAt = atmosphere?.generatedAt;
   const isStale = typeof generatedAt === 'number' && (Date.now() / 1000 - generatedAt) > LLM_MAX_AGE_HOURS * 3600;
+  const llmEnabled = isLlmEnabledByUrl();
   // Hide condition summary when LLM is disabled or not ready (no "Conditions summary loading" or "Condition summary unavailable")
   const isPlaceholderDescription = !atmosphere?.description ||
     atmosphere.description === 'Initializing art engine...' ||
@@ -341,7 +349,7 @@ const CurrentWeather = ({ current, forecast, lastUpdate, alerts = [], atmosphere
                   <div className="feels-like">Feels like {feelsLike}°</div>
                 )}
               </div>
-              {isLocal && atmosphere?.description && !isStale && !isPlaceholderDescription && (
+              {llmEnabled && atmosphere?.description && !isStale && !isPlaceholderDescription && (
                 feedbackLabel === 'down' ? (
                   <div className="atmospheric-description-row atmosphere-down-message" aria-live="polite">
                     {refreshingAfterDown

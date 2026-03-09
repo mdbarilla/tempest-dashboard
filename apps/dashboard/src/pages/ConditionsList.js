@@ -17,6 +17,13 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || '/api/weather';
 const LLM_MAX_AGE_HOURS = 2;
 const DETAIL_VIEW_METRICS = ['pressure', 'humidity', 'wind', 'precipitation', 'solar', 'temperature'];
 
+function isLlmEnabledByUrl() {
+  if (typeof window === 'undefined') return false;
+  const llmParam = new URLSearchParams(window.location.search).get('llm');
+  if (!llmParam) return false;
+  return ['1', 'true', 'on', 'yes'].includes(String(llmParam).toLowerCase());
+}
+
 function isNight(forecast) {
   if (!forecast?.daily?.length) return false;
   const now = new Date();
@@ -88,12 +95,13 @@ const ConditionsList = ({
   // LLM description: hide if stale or initializing
   const generatedAt = atmosphere?.generatedAt;
   const isStale = typeof generatedAt === 'number' && (Date.now() / 1000 - generatedAt) > LLM_MAX_AGE_HOURS * 3600;
+  const llmEnabled = isLlmEnabledByUrl();
   // Hide condition summary when LLM is disabled or not ready (no "Conditions summary loading" or "Condition summary unavailable")
   const isPlaceholderDescription = !atmosphere?.description ||
     atmosphere.description === 'Initializing art engine...' ||
     atmosphere.description === 'Condition summary unavailable.' ||
     (typeof atmosphere.description === 'string' && atmosphere.description.startsWith('Conditions summary loading'));
-  const showLlm = isLocal && atmosphere?.description && !isStale && !isPlaceholderDescription;
+  const showLlm = llmEnabled && atmosphere?.description && !isStale && !isPlaceholderDescription;
   const llmDescription = showLlm ? atmosphere.description : null;
 
   const buildFeedbackPayload = () => {

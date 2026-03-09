@@ -23,6 +23,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deferred
 - **Mobile list view row swipeability**: Not a top priority; other changes deployed first.
 
+## [1.5.2] - 2026-03-09
+
+### Changed
+- **LLM line default behavior**: Atmospheric description line is now disabled by default.
+- **URL-gated access**: LLM line is shown only when URL includes `?llm=1` (also supports `true`, `on`, `yes`).
+
+### Technical
+- `CurrentWeather` and `ConditionsList` now use URL-param gating for LLM visibility while preserving existing staleness/placeholder checks.
+
 ## [1.5.1] - 2026-03-05
 
 ### Fixed
