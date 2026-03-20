@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import { BrowserRouter, Routes, Route, useMatch, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { isLocalAccess } from './utils/access';
+import { AppMenuContext } from './context/AppMenuContext';
 import CurrentWeather from './components/CurrentWeather';
 import Forecast from './components/Forecast';
 import Metrics from './components/Metrics';
@@ -12,6 +13,9 @@ import ChatPage from './pages/ChatPage';
 import MetricDetailView from './pages/MetricDetailView';
 import BottomNav from './components/BottomNav';
 import WhatsGrowing from './components/WhatsGrowing';
+import GardenFrame from './components/GardenFrame';
+import ConditionCorrector from './components/ConditionCorrector';
+import GuestPage from './pages/GuestPage';
 import './styles/App.css';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api/weather';
@@ -22,37 +26,21 @@ function isMetricDetailPath(pathname) {
   return /^\/conditions\/[^/]+$/.test(pathname);
 }
 
-/** Footer shown only on dashboard (path /). */
-function FooterOrNull({ themeOverride, toggleTheme }) {
-  const location = useLocation();
-  if (location.pathname !== '/' && location.pathname !== '') return null;
+/** Provides menu context; must be inside BrowserRouter for useNavigate. */
+function MenuProvider({ children, lastUpdate, onEditCondition, onLogPrecipitation, onChangeTheme, isLocal }) {
+  const navigate = useNavigate();
+  const value = {
+    lastUpdate,
+    onEditCondition,
+    onLogPrecipitation: onLogPrecipitation || (() => navigate('/conditions/precipitation', { state: { view: 'add' } })),
+    onChangeTheme,
+    onViewTempestStation: () => window.open('https://tempestwx.com/station/204768/', '_blank', 'noopener,noreferrer'),
+    isLocal,
+  };
   return (
-    <footer className="footer">
-      <a
-        href="https://tempestwx.com/station/204768/"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="footer-link"
-      >
-        <span>Tempest Station #204768 • Wayland, MA</span>
-        <svg viewBox="0 0 24 24">
-          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-          <polyline points="15 3 21 3 21 9" />
-          <line x1="10" y1="14" x2="21" y2="3" />
-        </svg>
-      </a>
-      <div className="footer-actions">
-        <button onClick={toggleTheme} className="theme-toggle" title={
-          themeOverride === null ? 'Theme: Auto' :
-          themeOverride === 'dark' ? 'Theme: Dark' : 'Theme: Light'
-        }>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" fill="none" />
-            <path d="M12 2 A10 10 0 0 1 12 22 Z" fill="currentColor" stroke="none" />
-          </svg>
-        </button>
-      </div>
-    </footer>
+    <AppMenuContext.Provider value={value}>
+      {children}
+    </AppMenuContext.Provider>
   );
 }
 
@@ -120,6 +108,7 @@ function App() {
   const [isUsingCachedData, setIsUsingCachedData] = useState(false);
   const [themeOverride, setThemeOverride] = useState(() => localStorage.getItem('themeOverride') || null); // null, 'light', 'dark'
   const [lastFetchError, setLastFetchError] = useState(null); // { message, code, url } for dev debugging
+  const [conditionCorrectorOpen, setConditionCorrectorOpen] = useState(false);
   const isLocal = isLocalAccess();
 
   const refreshAtmosphere = useCallback(async () => {
@@ -133,6 +122,40 @@ function App() {
       console.error('Refresh atmosphere failed', e);
     }
   }, []);
+
+  const handleCorrection = useCallback(async (reportedCondition, precipPct = null) => {
+    const current = weatherData?.current;
+    const forecast = weatherData?.forecast;
+    if (!current) return;
+    const conditions = forecast?.current?.conditions || current.conditions;
+    const originalCondition = forecast?.current?.originalCondition || conditions;
+    try {
+      await axios.post(`${API_BASE_URL}/correction`, {
+        timestamp: current.timestamp,
+        reportedCondition,
+        originalCondition: originalCondition || conditions,
+        temperature: current.temperature.fahrenheit,
+        precip_pct_at_correction: precipPct != null ? Number(precipPct) : null
+      });
+      window.location.reload();
+    } catch (error) {
+      console.error('Error submitting correction:', error);
+      throw error;
+    }
+  }, [weatherData]);
+
+  const handleCancelCorrection = useCallback(async () => {
+    const current = weatherData?.current;
+    const correctionId = weatherData?.forecast?.current?.correctionId;
+    if (!correctionId || !current) return;
+    try {
+      await axios.delete(`${API_BASE_URL}/correction/${correctionId}?obs_timestamp=${current.timestamp}`);
+      window.location.reload();
+    } catch (error) {
+      console.error('Error canceling correction:', error);
+      alert('Failed to cancel correction. Please try again.');
+    }
+  }, [weatherData]);
 
   const fetchWeather = useCallback(async (retryCount = 0, isManualRetry = false, forceRefreshAtmosphere = false) => {
     const maxRetries = isManualRetry ? 1 : 3; // Only 1 retry for manual attempts
@@ -152,7 +175,7 @@ function App() {
       const completeUrl = `${API_BASE_URL}/complete${q.length ? '?' + q.join('&') : ''}`;
       const [weatherResponse, recentResponse] = await Promise.all([
         axios.get(completeUrl, { timeout: 10000 }),
-        axios.get(`${API_BASE_URL}/recent?hours=12`, { timeout: 10000 }).catch(() => ({ data: { success: false } }))
+        axios.get(`${API_BASE_URL}/recent?hours=24`, { timeout: 10000 }).catch(() => ({ data: { success: false } }))
       ]);
 
       if (weatherResponse.data.success) {
@@ -386,6 +409,16 @@ function App() {
     }
   };
 
+  // Guest page renders independently — no backend required.
+  // Wrapped in BrowserRouter so <Link> and <Route> work without the main app shell.
+  if (window.location.pathname === '/guest') {
+    return (
+      <BrowserRouter>
+        <GuestPage weatherData={weatherData} />
+      </BrowserRouter>
+    );
+  }
+
   if (loading) {
     return (
       <div className="app loading">
@@ -451,11 +484,10 @@ function App() {
         recent={recentData}
         isLocal={isLocal}
         onMetricClick={(link) => navigate(link, { state: { from: 'dashboard' } })}
-        onPrecipAddClick={() => navigate('/conditions/precipitation', { state: { from: 'dashboard', view: 'add' } })}
         onRefresh={() => fetchWeather(0, false)}
       />
-      <WhatsGrowing />
       <Forecast forecast={weatherData.forecast} />
+      <WhatsGrowing />
     </>
   );
   };
@@ -502,9 +534,17 @@ function App() {
     );
   };
 
+  const appMenuValue = {
+    lastUpdate,
+    onEditCondition: () => setConditionCorrectorOpen(true),
+    onChangeTheme: toggleTheme,
+    isLocal,
+  };
+
   return (
     <BrowserRouter>
       <RefreshManager fetchWeather={fetchWeather} />
+      <MenuProvider {...appMenuValue}>
       <div className="app">
         {connectionStatus !== 'online' && (
         <div className={`connection-banner ${connectionStatus}`}>
@@ -608,15 +648,31 @@ function App() {
                 </div>
               }
             />
+            <Route path="/garden/*" element={<GardenFrame />} />
+            <Route path="/guest" element={<GuestPage weatherData={weatherData} />} />
             <Route path="/" element={<DashboardContent />} />
             <Route path="*" element={<DashboardContent />} />
           </Routes>
         </main>
 
-        <FooterOrNull themeOverride={themeOverride} toggleTheme={toggleTheme} />
         <BottomNav />
       </div>
-    </div>
+      </div>
+      {conditionCorrectorOpen && weatherData && ReactDOM.createPortal(
+        <ConditionCorrector
+          open={true}
+          onOpenChange={(v) => !v && setConditionCorrectorOpen(false)}
+          currentCondition={weatherData.forecast?.current?.conditions || weatherData.current?.conditions}
+          temperature={weatherData.current?.temperature?.fahrenheit}
+          timestamp={weatherData.current?.timestamp}
+          currentPrecipPct={weatherData.forecast?.hourly?.[0]?.precipProbability ?? null}
+          onCorrect={handleCorrection}
+          onCancel={handleCancelCorrection}
+          isCorrected={weatherData.forecast?.current?.corrected || false}
+        />,
+        document.body
+      )}
+      </MenuProvider>
     </BrowserRouter>
   );
 }

@@ -1,0 +1,11 @@
+.shared-header-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.shared-header-updated {
+  font-size: var(--font-size-secondary);
+  color: var(--text-secondary);
+}
