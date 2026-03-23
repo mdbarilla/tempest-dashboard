@@ -1,353 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import Modal from '../components/Modal';
 import WeatherIcon from '../components/WeatherIcon';
 import './GuestPage.css';
+import { VISIT_ID, VISIT } from './guest.config';
 
 // ─── VISIT CONFIG ──────────────────────────────────────────────────────────────
-// Each text field that needs translation is { nl: '...', en: '...' }.
-// $ helper (below) picks the right language.
+// All visitor-specific data (name, dates, WiFi, itinerary, home city) lives in
+// guest.config.js — gitignored. Copy guest.config.example.js to configure a
+// new visit. Never commit guest.config.js.
 // ──────────────────────────────────────────────────────────────────────────────
 
-const VISIT_ID = 'terry-2026-03-23';
-
-const VISIT = {
-  guest: 'Terry',
-  dates:    { nl: '23 – 29 maart', en: 'March 23 – 29' },
-  greeting: { nl: 'voel je thuis.', en: 'make yourself at home.' },
-
-  homeCity: {
-    label: 'Aarhus', country: { nl: 'Denemarken', en: 'Denmark' },
-    lat: 56.1567, lon: 10.2108, timezone: 'Europe/Copenhagen',
-  },
-
-  wifi: { network: '142plain', password: 'Sophia0505' },
-  googleHomeUrl: 'https://home.google.com',
-
-  schedule: [
-    {
-      day:      { nl: 'Maandag',  en: 'Monday'   },
-      date:     { nl: '23 mrt',   en: 'Mar 23'   },
-      subtitle: { nl: 'Aankomst', en: 'Arrival'  },
-      note:     {
-        nl: 'Grote reisdag. We houden het rustig.',
-        en: 'Big travel day. We will keep it easy.',
-      },
-      image: '/guest-images/monday-boston-common.jpg',
-      entries: [
-        {
-          time: { nl: 'Ochtend',  en: 'Morning'   },
-          text: {
-            nl: 'We staan vroeg op om je van het vliegveld te halen. Brian heeft een tandarts in Copley om 8 uur. We zoeken ergens in de buurt ontbijt in de tussentijd.',
-            en: "We'll be up early to grab you from the airport. Brian has a dentist appointment in Copley at 8. We'll grab breakfast somewhere nearby in the meantime.",
-          },
-        },
-        {
-          time: { nl: 'Middag',  en: 'Afternoon' },
-          text: {
-            nl: 'Terug naar Tower Hill om uit te pakken en bij te komen van de vlucht.',
-            en: 'Back home to unpack and decompress from the overnight.',
-          },
-        },
-        {
-          time: { nl: 'Avond', en: 'Evening' },
-          text: {
-            nl: 'Rustige avond thuis of ergens vlakbij. Gewoon ontspannen.',
-            en: 'Low-key night at home or somewhere close. Just relax.',
-          },
-        },
-      ],
-      links: [],
-    },
-    {
-      day:      { nl: 'Dinsdag',  en: 'Tuesday'  },
-      date:     { nl: '24 mrt',   en: 'Mar 24'   },
-      subtitle: { nl: 'Dag Weg',  en: 'Day Out'  },
-      note:     {
-        nl: 'Het huis is de hele dag bezet voor schimmelrenovatie. Een goed excuus voor een uitje met Sophia.',
-        en: 'The house is off-limits all day for mold abatement. A good excuse for an adventure with Sophia.',
-      },
-      image: '/guest-images/tuesday-duxbury.jpg',
-      entries: [
-        {
-          time: { nl: 'Ochtend', en: 'Morning' },
-          text: {
-            nl: 'Vroeg weg. Koffie en ontbijt ergens waar honden welkom zijn.',
-            en: 'Out early. Coffee and breakfast somewhere dog-friendly.',
-          },
-        },
-        {
-          time: { nl: 'Middag', en: 'Afternoon' },
-          text: {
-            nl: 'Bay Farm in Duxbury. 80 hectare reservaat op Kingston Bay met zoutmoerassen, cedar grove, rotsachtige richels en 2 km paden. Spectaculair uitzicht. Daarna oesters bij Island Creek Oyster Raw Bar, direct aan het water waar ze worden gekweekt.',
-            en: 'Bay Farm in Duxbury. 80 acres on Kingston Bay with salt marsh, cedar grove, rocky ledges, and 2 miles of trails. Spectacular bay views. Then oysters at Island Creek Oyster Raw Bar, right at the water where they grow them.',
-          },
-        },
-        {
-          time: { nl: 'Avond', en: 'Evening' },
-          text: {
-            nl: 'Terug thuis zodra het klaar is. Avondeten nader te bepalen.',
-            en: 'Back home once the crew wraps up. Dinner to be decided.',
-          },
-        },
-      ],
-      links: [
-        { label: 'Bay Farm', href: 'https://sites.google.com/view/kingstonconservation/bay-farm' },
-        { label: 'Island Creek Oyster Bar', href: 'https://shop.islandcreekoysters.com/pages/the-raw-bar-at-island-creek-oyster-farm' },
-      ],
-    },
-    {
-      day:      { nl: 'Woensdag', en: 'Wednesday' },
-      date:     { nl: '25 mrt',   en: 'Mar 25'    },
-      subtitle: { nl: 'Lego Dag', en: 'Lego Day'  },
-      note:     {
-        nl: 'Terry heeft een werkvergadering bij Lego HQ in Boston. De ochtend past zich aan jouw schema aan.',
-        en: "Terry has a work meeting at Lego HQ in Boston. Morning is built around your schedule.",
-      },
-      image: '/guest-images/wednesday-lego.avif',
-      entries: [
-        {
-          time: { nl: 'Ochtend', en: 'Morning' },
-          text: {
-            nl: 'Flexibel. We kijken wanneer je bij Lego moet zijn.',
-            en: 'Flex. We will time it around when you need to be at Lego.',
-          },
-        },
-        {
-          time: { nl: 'Middag', en: 'Afternoon' },
-          text: {
-            nl: 'Jij bent bij Lego HQ. Mark en Brian redden zich. Of we spreken daarna af.',
-            en: 'You are at Lego HQ. Mark and Brian will hold it down. Or we meet up after.',
-          },
-        },
-        {
-          time: { nl: 'Avond', en: 'Evening' },
-          text: {
-            nl: "Diner bij Dudley's Chateau in Wayland. Prima buurtrestaurant.",
-            en: "Dinner at Dudley's Chateau in Wayland. Great neighborhood spot.",
-          },
-        },
-      ],
-      links: [
-        { label: 'Lyrik Back Bay', href: 'https://lyrikbackbay.com/about/' },
-      ],
-    },
-    {
-      day:      { nl: 'Donderdag',    en: 'Thursday'    },
-      date:     { nl: '26 mrt',       en: 'Mar 26'      },
-      subtitle: { nl: 'ManRay Nacht', en: 'ManRay Night' },
-      note:     {
-        nl: 'Brian werkt overdag. De avond staat al vast.',
-        en: 'Brian is working during the day. The night is already sorted.',
-      },
-      image: '/guest-images/thursday-manray-2026.png',
-      entries: [
-        {
-          time: { nl: 'Ochtend', en: 'Morning' },
-          text: {
-            nl: 'Koffie en een ochtendwandeling met Sophia.',
-            en: 'Coffee and a morning walk with Sophia.',
-          },
-        },
-        {
-          time: { nl: 'Middag', en: 'Afternoon' },
-          text: {
-            nl: 'Lokaal winkelen of iets anders dat aanspreekt.',
-            en: 'Local shopping or whatever sounds good.',
-          },
-        },
-        {
-          time: { nl: 'Avond', en: 'Evening' },
-          text: {
-            nl: 'Avondeten buiten, dan Daddy-O bij ManRay in Cambridge. Begint om 22:00.',
-            en: 'Dinner out, then Daddy-O at ManRay in Cambridge. Starts 10pm.',
-          },
-        },
-      ],
-      links: [
-        { label: 'ManRay', href: 'https://www.manraynightclub.com' },
-      ],
-    },
-    {
-      day:      { nl: 'Vrijdag',    en: 'Friday'    },
-      date:     { nl: '27 mrt',     en: 'Mar 27'    },
-      subtitle: { nl: 'Jouw keuze', en: 'Your call' },
-      note:     {
-        nl: 'Brian werkt. Mark en Terry, kies jullie avontuur.',
-        en: 'Brian is working. Mark and Terry, pick your adventure.',
-      },
-      image: '/guest-images/friday-beacon-hill.webp',
-      options: [
-        {
-          title: { nl: 'Bradley Estate',  en: 'Bradley Estate' },
-          note:  {
-            nl: 'Canton. 30 min. 90 hectare Trustees-landgoed met Italiaanse tuinmuren en bospaden.',
-            en: 'Canton. 30 min. 90-acre Trustees property with walled Italian gardens and woodland trails.',
-          },
-          href: 'https://thetrustees.org/place/eleanor-cabot-bradley-estate/',
-        },
-        {
-          title: { nl: 'Crane Beach',  en: 'Crane Beach' },
-          note:  {
-            nl: 'Ipswich. 1 uur 15. 8 km strand en duinen. Honden welkom tot eind maart.',
-            en: 'Ipswich. 1h 15. Five miles of beach and dunes. Dogs allowed through March.',
-          },
-          href: 'https://thetrustees.org/place/crane-beach/',
-        },
-        {
-          title: { nl: 'deCordova Sculpture Park', en: 'deCordova Sculpture Park' },
-          note:  {
-            nl: 'Lincoln. 20 min. Buitenmuseum met hedendaagse sculpturen op 35 hectare terrein langs Sandy Pond.',
-            en: 'Lincoln. 20 min. Outdoor museum with contemporary sculptures across 35 acres along Sandy Pond.',
-          },
-          href: 'https://thetrustees.org/place/decordova/',
-        },
-        {
-          title: { nl: 'Dag in de stad', en: 'City day' },
-          note:  {
-            nl: 'Boston of Cambridge. Wat er nog op de lijst staat.',
-            en: 'Boston or Cambridge. Whatever is still on the list.',
-          },
-          href: null,
-        },
-      ],
-      entries: [
-        {
-          time: { nl: 'Avond', en: 'Evening' },
-          text: {
-            nl: 'Diner buiten of thuis. Afhankelijk van de dag.',
-            en: 'Dinner out or at home. Depends on the day.',
-          },
-        },
-      ],
-      links: [],
-    },
-    {
-      day:      { nl: 'Zaterdag',      en: 'Saturday'    },
-      date:     { nl: '28 mrt',        en: 'Mar 28'      },
-      subtitle: { nl: 'Dag in Lincoln', en: 'Lincoln Day' },
-      note:     {
-        nl: 'Met zijn drieën. Vrije dag, geen agenda.',
-        en: 'All three of us. Full day, no agenda.',
-      },
-      image: '/guest-images/saturday-lamb.jpg',
-      entries: [
-        {
-          time: { nl: 'Ochtend', en: 'Morning' },
-          text: {
-            nl: 'Brunch bij Twisted Tree Café in Lincoln. Fijn buurtcafé, altijd goed.',
-            en: 'Brunch at Twisted Tree Café in Lincoln. Neighborhood spot, always good.',
-          },
-        },
-        {
-          time: { nl: 'Middag', en: 'Afternoon' },
-          text: {
-            nl: 'Drumlin Farm van Mass Audubon: 291 hectare werkende boerderij met schapen, geiten, varkens, koeien en kippens. Wildlife exhibit met uilen, haviken en vossen. 6 km paden. Let op: geen honden. Sophia blijft thuis. Daarna Codman Estate of Gropius House, alles op loopafstand van elkaar.',
-            en: 'Drumlin Farm by Mass Audubon. 291 acres, working farm with sheep, goats, pigs, cows, chickens, and a wildlife exhibit with owls, hawks, and foxes. Four miles of trails. No dogs — Sophia sits this one out. Then Codman Estate or Gropius House, all within a mile of each other.',
-          },
-        },
-        {
-          time: { nl: 'Avond', en: 'Evening' },
-          text: {
-            nl: 'Jij kiest. Grote avond uit of een goed diner thuis.',
-            en: 'Your call. Big night out or a good dinner at home.',
-          },
-        },
-      ],
-      links: [
-        { label: 'Drumlin Farm',   href: 'https://www.massaudubon.org/get-outdoors/wildlife-sanctuaries/drumlin-farm' },
-        { label: 'Codman Estate',  href: 'https://historicnewengland.org/historic-properties/homes/codman-estate/' },
-        { label: 'Gropius House',  href: 'https://historicnewengland.org/historic-properties/homes/gropius-house/' },
-      ],
-    },
-    {
-      day:      { nl: 'Zondag',      en: 'Sunday'       },
-      date:     { nl: '29 mrt',      en: 'Mar 29'       },
-      subtitle: { nl: 'Vertrekdag',  en: 'Departure Day' },
-      note:     {
-        nl: 'We houden het los rond je vlucht.',
-        en: 'We will keep it loose around your flight.',
-      },
-      image: '/guest-images/sunday-logan-terminal-e.jpg',
-      entries: [
-        {
-          time: { nl: 'Ochtend', en: 'Morning' },
-          text: {
-            nl: 'Nader te bepalen op basis van vluchttijd.',
-            en: 'To be decided based on flight time.',
-          },
-        },
-        {
-          time: { nl: 'Middag', en: 'Afternoon' },
-          text: {
-            nl: 'Goede reis. Tot snel.',
-            en: 'Safe travels. Come back soon.',
-          },
-        },
-      ],
-      links: [],
-    },
-  ],
-
-  thingsToDo: [
-    {
-      label: { nl: 'Mass Central Rail Trail', en: 'Mass Central Rail Trail' },
-      note:  { nl: 'Direct voor het huis. Loopt door Wayland en verder, Boston tot Northampton.', en: 'Right out the front door. Runs through Wayland and beyond, Boston to Northampton.' },
-      href: 'https://masscentralrailtrail.org',
-    },
-    {
-      label: { nl: "Russel's Garden Center", en: "Russel's Garden Center" },
-      note:  { nl: 'Wayland. 5 min. Groot tuincentrum, mooi om doorheen te lopen.', en: 'Wayland. 5 min. Great garden center, worth a wander.' },
-      href: 'https://www.russelsgardencenter.com',
-    },
-    {
-      label: { nl: 'Wayland Depot', en: 'Wayland Depot' },
-      note:  { nl: 'Wayland. 5 min. Vrijwilligerswinkel in het oude station van 1881 langs het Rail Trail.', en: 'Wayland. 5 min. Volunteer gift shop inside the restored 1881 station building on the Rail Trail.' },
-      href: 'http://thewaylanddepot.com/',
-    },
-    {
-      label: { nl: 'Lands Sake Farm', en: 'Lands Sake Farm' },
-      note:  { nl: 'Weston. 15 min. Gemeenschapsboerderij met seizoensproducten.', en: 'Weston. 15 min. Community farm with seasonal produce.' },
-      href: 'https://www.landssake.org',
-    },
-  ],
-
-  about: {
-    nl: 'Tower Hill is vernoemd naar het oude Tower Hill treinstation en de spoorlijn, nu het Mass Central Rail Trail dat direct voor het huis loopt. Het verbindt Wayland met de naburige plaatsen Weston en Sudbury, en loopt uiteindelijk van Boston tot Northampton in de Berkshires. Wayland is al een actieve gemeenschap sinds de jaren 1600, rijk aan boerderijen, molenvijvers en natuurgebieden.',
-    en: 'Tower Hill is named after the old Tower Hill Train Station and railroad corridor, now the Mass Central Rail Trail that runs directly in front of the house. It connects Wayland to neighboring towns of Weston and Sudbury, and will eventually run all the way from Boston to Northampton in the Berkshires. Wayland has been an active community since the 1600s, rich with farms, mill ponds, and conservation land.',
-  },
-
-  ui: {
-    quickWeather:  { nl: 'Buiten',            en: 'Outside'           },
-    thisWeek:      { nl: 'Dit bezoek',        en: 'This visit'        },
-    fullForecast:  { nl: 'Volledig weerbericht', en: 'Full forecast'  },
-    viewWeather:   { nl: 'Bekijk weer',       en: 'View weather'      },
-    wifiLabel:     { nl: 'WIFI',              en: 'WIFI'              },
-    passwordLabel: { nl: 'WACHTWOORD',        en: 'PASSWORD'          },
-    homeLabel:     { nl: 'Verlichting en Thuis', en: 'Lights and Home' },
-    homeNote:      { nl: 'Vraag ons, of tik hieronder voor verlichting, muziek en de thermostaat.', en: 'Ask us, or tap below to control lights, music, and the thermostat.' },
-    openHome:      { nl: 'Bedien via Google Home', en: 'Control on Google Home' },
-    thePlan:       { nl: 'Het plan',          en: 'The plan'          },
-    seeDay:        { nl: 'Bekijk dag',        en: 'See the plan'      },
-    whileHere:     { nl: 'Rond Tower Hill', en: 'Around Tower Hill' },
-    aboutTitle:    { nl: 'Over Tower Hill',   en: 'About Tower Hill'  },
-    viewHistory:   { nl: 'Lees de geschiedenis →', en: 'Read the history →' },
-    backHome:      { nl: 'Thuis',             en: 'Back home'         },
-    leaveNote:     { nl: 'Laat een berichtje achter', en: 'Leave a note' },
-    guestbook:     { nl: 'GASTENBOEK',        en: 'GUESTBOOK'         },
-    namePlaceholder:  { nl: 'Jouw naam',      en: 'Your name'         },
-    notePlaceholder:  { nl: 'Een berichtje (optioneel)', en: 'Leave a note (optional)' },
-    signBtn:       { nl: 'Schrijf je in',     en: 'Sign the Guestbook' },
-    thanks:        { nl: 'Bedankt! We zijn zo blij dat je er bent. We kunnen niet wachten om je snel weer te zien.', en: 'Thanks for signing. We are so happy to host you — can\'t wait to see you again soon!' },
-    back:          { nl: 'Terug',             en: 'Back'              },
-    places:        { nl: 'Plekken',           en: 'Places'            },
-    morning:       { nl: 'Ochtend',           en: 'Morning'           },
-    weather:       { nl: 'Weer',              en: 'Weather'           },
-    aarhusIn:      { nl: 'Thuis in',          en: 'Back home in'      },
-  },
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
 
 
 // ─── WMO weather codes for Open-Meteo ────────────────────────────────────────
@@ -404,9 +67,9 @@ const displayTemp = (f, useCelsius) => useCelsius ? toC(f) : Math.round(f);
 
 // Weather quick card ────────────────────────────────────────────────────────────
 
-// Visit window: March 23–29, 2026 (midnight local → midnight +1 day)
-const VISIT_START_MS = new Date(2026, 2, 23).getTime();
-const VISIT_END_MS   = new Date(2026, 2, 30).getTime(); // exclusive upper bound
+// Visit window derived from config arrival/departure ISO strings
+const VISIT_START_MS = new Date(VISIT.arrival).getTime();
+const VISIT_END_MS   = new Date(VISIT.departure).getTime() + 86400000; // exclusive upper bound
 
 function WeatherQuickCard({ weatherData, lang, $, useCelsius }) {
   const current  = weatherData?.current;
@@ -580,43 +243,63 @@ function DayModal({ day, isOpen, onClose, lang, $ }) {
 
 
 // Guestbook ────────────────────────────────────────────────────────────────────
+// Entries are stored server-side (SQLite via /api/guestbook) so they persist
+// across devices and are visible in the full guestbook history.
 
 function GuestbookSection({ visitId, $ }) {
-  const storageKey = `guestbook_${visitId}`;
-  const [entries, setEntries] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(storageKey)) || []; } catch { return []; }
-  });
+  const [entries,   setEntries]   = useState([]);
+  const [loading,   setLoading]   = useState(true);
   const [name,      setName]      = useState('');
   const [message,   setMessage]   = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [error,     setError]     = useState(null);
 
-  function handleSubmit(e) {
+  // Load existing entries for this visit on mount
+  useEffect(() => {
+    fetch(`/api/guestbook?visitId=${encodeURIComponent(visitId)}`)
+      .then(r => r.json())
+      .then(data => setEntries(data.entries || []))
+      .catch(() => setEntries([]))
+      .finally(() => setLoading(false));
+  }, [visitId]);
+
+  async function handleSubmit(e) {
     e.preventDefault();
     if (!name.trim()) return;
-    const entry = {
-      name: name.trim(),
-      message: message.trim(),
-      date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
-    };
-    const updated = [...entries, entry];
-    setEntries(updated);
-    try { localStorage.setItem(storageKey, JSON.stringify(updated)); } catch {}
-    setName(''); setMessage('');
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 4000);
+    setError(null);
+
+    try {
+      const res = await fetch('/api/guestbook', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ visitId, name: name.trim(), message: message.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to sign');
+
+      setEntries(prev => [...prev, data.entry]);
+      setName(''); setMessage('');
+      setSubmitted(true);
+      setTimeout(() => setSubmitted(false), 4000);
+    } catch (err) {
+      setError('Could not save — try again.');
+    }
   }
+
+  const formatDate = (iso) =>
+    new Date(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
   return (
     <div className="guestbook-card">
       <div className="guestbook-label">{$(VISIT.ui.guestbook)}</div>
 
-      {entries.length > 0 && (
+      {!loading && entries.length > 0 && (
         <div className="guestbook-entries">
-          {entries.map((e, i) => (
-            <div key={i} className="guestbook-entry">
+          {entries.map((e) => (
+            <div key={e.id} className="guestbook-entry">
               <div className="guestbook-entry-meta">
                 <span className="guestbook-entry-name">{e.name}</span>
-                <span className="guestbook-entry-date">{e.date}</span>
+                <span className="guestbook-entry-date">{formatDate(e.signed_at)}</span>
               </div>
               {e.message && <p className="guestbook-entry-msg">{e.message}</p>}
             </div>
@@ -644,6 +327,7 @@ function GuestbookSection({ visitId, $ }) {
             onChange={e => setMessage(e.target.value)}
             rows={3}
           />
+          {error && <p className="guestbook-error">{error}</p>}
           <button type="submit" className="guestbook-btn">{$(VISIT.ui.signBtn)}</button>
         </form>
       )}
@@ -656,45 +340,81 @@ function GuestbookSection({ visitId, $ }) {
 
 const HISTORY_SECTIONS = [
   {
-    heading: 'The Origin of Tower Hill Station',
-    body: 'Across Plain Road, where the parking lot is now, is the site of Tower Hill railroad station, established when the Massachusetts Central Railroad opened through Wayland in 1881. Its name came from a two-story wooden tower built by Boston lawyer and poet Richard Frederick Fuller about 1860 at the top of the hill on his farmland, which he called Tower Hill. The wooden tower burned and in 1929 was replaced with a stone tower that still stands today as part of the house at 157 Plain Road.',
+    heading: {
+      nl: 'De oorsprong van Tower Hill Station',
+      en: 'The Origin of Tower Hill Station',
+    },
+    body: {
+      nl: 'Aan de overkant van Plain Road, waar nu de parkeerplaats is, bevond zich het Tower Hill-treinstation. Het werd opgericht toen de Massachusetts Central Railroad in 1881 een lijn door Wayland opende. De naam is afkomstig van een houten toren op twee verdiepingen die de Bostoniaanse advocaat en dichter Richard Frederick Fuller rond 1860 bovenop de heuvel op zijn boerderij bouwde — een terrein dat hij Tower Hill noemde. De houten toren brandde af en werd in 1929 vervangen door een stenen toren die nog altijd staat als onderdeel van het huis op 157 Plain Road.',
+      en: 'Across Plain Road, where the parking lot is now, is the site of Tower Hill railroad station, established when the Massachusetts Central Railroad opened through Wayland in 1881. Its name came from a two-story wooden tower built by Boston lawyer and poet Richard Frederick Fuller about 1860 at the top of the hill on his farmland, which he called Tower Hill. The wooden tower burned and in 1929 was replaced with a stone tower that still stands today as part of the house at 157 Plain Road.',
+    },
     photos: [
       { src: '/guest-images/history/train-boarding-1956.jpg', caption: 'Steam locomotive arriving at Tower Hill station, April 1956 · Photo by Donald S. Robinson' },
     ],
   },
   {
-    heading: 'The Second Station & The Flag Stop',
-    body: 'The original small wooden station burned in 1892 and was replaced with a larger station building by the Boston & Maine Railroad, which by then was operating this line. The station agent sold tickets, handled baggage, and lowered the crossing gates when trains approached. For most trains this was a "flag stop" — trains would only stop when the agent or a passenger set the signal, signaling the approaching engineer to stop. As ridership declined, the agent\'s job was abolished in 1920, but the station remained open as a shelter.',
+    heading: {
+      nl: 'Het tweede station & de vlaghalte',
+      en: 'The Second Station & The Flag Stop',
+    },
+    body: {
+      nl: 'Het oorspronkelijke kleine houten stationsgebouw brandde af in 1892 en werd vervangen door een groter gebouw door de Boston & Maine Railroad, die de lijn inmiddels beheerde. De stationsbeambte verkocht kaartjes, behandelde bagage en liet de overwegbomen zakken als er treinen naderden. Voor de meeste treinen was dit een "vlaghalte" — treinen stopten alleen als de beambte of een passagier het sein gaf. Naarmate het reizigersaantal afnam, werd de functie van stationsbeambte in 1920 afgeschaft, maar het station bleef open als schuilplaats.',
+      en: 'The original small wooden station burned in 1892 and was replaced with a larger station building by the Boston & Maine Railroad, which by then was operating this line. The station agent sold tickets, handled baggage, and lowered the crossing gates when trains approached. For most trains this was a "flag stop" — trains would only stop when the agent or a passenger set the signal, signaling the approaching engineer to stop. As ridership declined, the agent\'s job was abolished in 1920, but the station remained open as a shelter.',
+    },
     photos: [
       { src: '/guest-images/history/station-open-shelter.jpg', caption: 'Tower Hill station building from the trackside · Walker Transportation Collection' },
       { src: '/guest-images/history/ticket-1919.jpg', caption: 'A half-fare (student) ticket from Tower Hill to Weston cost 8 cents in 1919 · United States Railroad Administration — Boston & Maine Railroad' },
     ],
   },
   {
-    heading: 'The Commuter Era',
-    body: 'Steam locomotives carried commuters from Wayland to Boston through the mid-twentieth century. By April 1956, steam was replaced by diesels — one of the last acts of a dwindling line.',
+    heading: {
+      nl: 'Het forenzentijdperk',
+      en: 'The Commuter Era',
+    },
+    body: {
+      nl: 'Stoommachines vervoerden forensen van Wayland naar Boston tot halverwege de twintigste eeuw. In april 1956 werden stoommachines vervangen door diesellocomotieven — een van de laatste handelingen op een stervende lijn.',
+      en: 'Steam locomotives carried commuters from Wayland to Boston through the mid-twentieth century. By April 1956, steam was replaced by diesels — one of the last acts of a dwindling line.',
+    },
     photos: [
       { src: '/guest-images/history/train-steam-1956.jpeg', caption: 'The 8:27 morning commuter train from Clinton to Boston approaches Tower Hill station, Spring 1956 · Photo by Donald S. Robinson' },
     ],
   },
   {
-    heading: 'The Station\'s Final Decades',
-    body: 'In April 1955 the old station building was boarded up and replaced by a small open shelter. In 1944 the railroad sold the building to Joseph H. Decatur, a local farmer. The town acquired the land in 1960 and demolished the station building that same year. The last passenger train ran in 1971. The open shelter was torn down in 1996.',
+    heading: {
+      nl: 'De laatste decennia van het station',
+      en: 'The Station\'s Final Decades',
+    },
+    body: {
+      nl: 'In april 1955 werd het oude stationsgebouw dichtgetimmerd en vervangen door een kleine open schuilplaats. In 1944 had de spoorweg het gebouw verkocht aan Joseph H. Decatur, een lokale boer. De gemeente kocht het land in 1960 en sloopte het stationsgebouw datzelfde jaar. De laatste passagierstrein reed in 1971. De open schuilplaats werd afgebroken in 1996.',
+      en: 'In April 1955 the old station building was boarded up and replaced by a small open shelter. In 1944 the railroad sold the building to Joseph H. Decatur, a local farmer. The town acquired the land in 1960 and demolished the station building that same year. The last passenger train ran in 1971. The open shelter was torn down in 1996.',
+    },
     photos: [
       { src: '/guest-images/history/station-boarded-1955.jpg', caption: 'The old station building boarded up, April 1955 · Photo by William H. Higginbotham, Walker Transportation Collection, Historic Beverly' },
       { src: '/guest-images/history/last-train-1968.jpeg', caption: 'By December 1968, only one train a day ran to Boston — a self-propelled Buddliner rail diesel car · Photo by Richard Conard' },
     ],
   },
   {
-    heading: 'The Only Remaining Reminder',
-    body: 'The sign at the intersection of Plain Road and Route 20 is the only remaining physical reminder of the name "Tower Hill."',
+    heading: {
+      nl: 'De enige resterende herinnering',
+      en: 'The Only Remaining Reminder',
+    },
+    body: {
+      nl: 'Het bord op de kruising van Plain Road en Route 20 is de enige resterende fysieke herinnering aan de naam "Tower Hill".',
+      en: 'The sign at the intersection of Plain Road and Route 20 is the only remaining physical reminder of the name "Tower Hill."',
+    },
     photos: [
       { src: '/guest-images/history/stone-marker.jpeg', caption: 'Street sign on stone marker at Plain Road and Route 20 — the only remaining physical reminder of the name Tower Hill' },
     ],
   },
   {
-    heading: 'The Mass Central Rail Trail',
-    body: 'The B&M Railroad\'s Central Mass Branch once stretched from North Station, Boston, to Northampton. Governor Calvin Coolidge rode this train daily to the State House just after World War I. The Hurricane of 1938 broke the railroad in the center of the state. Now, almost a century later, the old railroad property is being transformed into a shared-use path by dedicated volunteers, municipalities, and land trusts across 26 communities — 104 miles, Boston to Northampton.',
+    heading: {
+      nl: 'Het Mass Central Rail Trail',
+      en: 'The Mass Central Rail Trail',
+    },
+    body: {
+      nl: 'Het Central Mass Branch van de B&M Railroad liep ooit van North Station in Boston tot Northampton. Gouverneur Calvin Coolidge nam deze trein dagelijks naar het State House, vlak na de Eerste Wereldoorlog. De orkaan van 1938 verbrak de spoorlijn in het midden van de staat. Nu, bijna een eeuw later, wordt het oude spooreigendom omgebouwd tot een gedeeld fiets- en wandelpad door toegewijde vrijwilligers, gemeenten en landstichtingen in 26 gemeenschappen — 104 mijl, van Boston tot Northampton.',
+      en: 'The B&M Railroad\'s Central Mass Branch once stretched from North Station, Boston, to Northampton. Governor Calvin Coolidge rode this train daily to the State House just after World War I. The Hurricane of 1938 broke the railroad in the center of the state. Now, almost a century later, the old railroad property is being transformed into a shared-use path by dedicated volunteers, municipalities, and land trusts across 26 communities — 104 miles, Boston to Northampton.',
+    },
     photos: [
       { src: '/guest-images/history/mcrt-sign.jpeg', caption: 'Mass Central Rail Trail interpretive sign — Boston to Northampton, 104 miles through 26 communities' },
       { src: '/guest-images/history/bm-emblem.jpg', caption: 'Boston and Maine Railroad Historical Society emblem, affixed to the interpretive sign cabinet at the Tower Hill station site' },
@@ -719,8 +439,8 @@ function HistoryModal({ isOpen, onClose, $ }) {
         <div className="history-modal-content">
           {HISTORY_SECTIONS.map((section, i) => (
             <div key={i} className="history-section">
-              <h3 className="history-section-heading">{section.heading}</h3>
-              <p className="history-section-body">{section.body}</p>
+              <h3 className="history-section-heading">{$(section.heading)}</h3>
+              <p className="history-section-body">{$(section.body)}</p>
               {section.photos.map((photo, j) => (
                 <figure key={j} className="history-figure">
                   <img src={photo.src} alt={photo.caption} className="history-img" loading="lazy" />
@@ -880,6 +600,25 @@ export default function GuestPage({ weatherData }) {
                   }
                 </span>
                 <span className="explore-note">{$(item.note)}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {/* CrossFit */}
+      <section className="guest-section">
+        <h2 className="guest-section-title">{$(VISIT.ui.nearbyGym)}</h2>
+        <ul className="explore-list">
+          {VISIT.crossfit.map((item, i) => (
+            <li key={i} className="explore-item">
+              <div className="explore-item-inner">
+                <span className="explore-label">
+                  {item.href
+                    ? <a href={item.href} target="_blank" rel="noopener noreferrer" className="explore-link">{item.label}</a>
+                    : item.label
+                  }
+                </span>
               </div>
             </li>
           ))}

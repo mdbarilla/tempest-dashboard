@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.5] - 2026-03-23
+
+### Changed
+- **Guest page — Terry visit (Mar 23–27)**: Updated visit window from Mar 23–29 to Mar 23–27. Removed Saturday and Sunday from the day schedule. Friday options updated: Crane Beach removed, Drumlin Farm added; note updated to reflect departure evening.
+- **Guest page — forecast carousel**: Fixed layout bug where forecast day cards were overflowing their `2fr` grid column (added `min-width: 0` to `.quick-item--weather`). Forecast cards now use `flex: 1 0 100px` — fill the full card width for short visits (3–5 days) while still scrolling horizontally for 7-day visits.
+- **Guest page — history modal**: All six history sections now bilingual (NL/EN). Headings and body text switch language with the NL·US toggle.
+- **Guest page — Nearby CrossFit section**: New section below "Around Tower Hill" listing Daybreak Fit, CrossFit Tilt, and CrossFit Newton with links.
+
+### Fixed
+- **Guest page — debug instrumentation removed**: Stripped Cursor-inserted layout measurement refs (`weatherCardRef`, `forecastRowRef`), `console.warn`, and a background `fetch` to `127.0.0.1:7450` that were left in from a prior debugging session.
+
+### Technical
+- `apps/dashboard/src/pages/GuestPage.js`: Removed debug refs/effect; bilingual `HISTORY_SECTIONS`; CrossFit section render; removed unused `React` default import.
+- `apps/dashboard/src/pages/GuestPage.css`: `min-width: 0` on `.quick-item--weather`; `flex: 1 0 100px` on `.quick-forecast-day`.
+- `apps/dashboard/src/pages/guest.config.js`: Departure updated to 2026-03-27; schedule trimmed to 5 days; Friday options revised; `crossfit` array added; `nearbyGym` UI string added.
+
+## [1.5.4] - 2026-03-16
+
+### Fixed
+- **Historical data blank for past dates**: When selecting a past date (e.g. 3/2/2026), the history table now fetches from the Tempest device API when local observations are sparse or empty. Requires `TEMPEST_DEVICE_ID` to be set.
+- **Precipitation showing 0.00**: Current weather now reads precipitation from the better_forecast API when available (`precip_accum_local_day`, `precip_accum_last_1hr`). When the API returns 0, the app falls back to the latest DB observation with precip (e.g. from device observations).
+- **Wind data incomplete**: Wind now displays the full range (lull, speed, gust). History table shows "X–Y mph" or "X mph (gusts Y)" when gust data exists. Wind detail chart renders three lines: Speed (solid), Gust (dashed accent), Lull (dashed muted). Metrics cards show lull–gust range when available.
+
+### Technical
+- `backend/api/weather.js`: Device observations fallback for hourly endpoint; windGust/windLull in hourly rows and /recent response; precip fallback from latest DB observation in /complete.
+- `backend/services/tempest-api.js`: Precipitation fields from current_conditions; wind.lull in formatCurrentWeatherFromForecast; wind_lull in deviceObsArrayToRow; wind.gust/lull in formatForecast hourly.
+- `backend/services/database.js`: wind_lull column and saveObservation support.
+- `apps/dashboard`: HistoryPage formatWindCell; MetricChart wind lines + legend; useHistoricalData wind multi-series; conditions-metrics and Metrics wind range display.
+
 ### Planned for 1.6.0 (LLM)
 - **LLM historical chat**: In-app chat for historical data queries
 - **Bug #1**: Fix "Condition summary unavailable"
@@ -17,11 +46,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Radar preview tile**: Conditional tile (first in metrics list) when precip conditions; icon + title + radar background; full-width on tablet grid. See `docs/plans/plan-1.5.0-radar-tile.md`.
 
 ### TBD (Wind chart improvements)
-- **Wind Detail Chart — Dual Trend Lines**: Speed + gusts as separate trend lines
 - **Wind Chart Seismograph Effect**: 5-min bucketing or smoothing for jagged 24h wind lines
 
 ### Deferred
 - **Mobile list view row swipeability**: Not a top priority; other changes deployed first.
+
+## [1.5.3] - 2026-03-09
+
+### Added
+- **Garden integration — "Now Growing" carousel**: Horizontal thumbnail carousel below the 10-day forecast showing recently planted seeds from the garden app. Cards display a parsed plant name (primary/secondary split on em-dash), image at 75% opacity that fades to full color on hover, and link directly to `/garden/seed/:id` in the embedded frame.
+- **Garden tab in bottom nav**: When garden mode is active (`?garden=1` or `/garden` path), the Ask tab is replaced by a Garden tab (leaf icon) that navigates to `/garden`. Preference is persisted to `localStorage` so the tab survives navigation and refresh.
+- **GardenFrame component**: `/garden/*` route loads the garden SPA in a fixed full-screen iframe that sits above the dashboard content but below the bottom nav. Deep-links (e.g. `/garden/seed/5`) are forwarded to the iframe `src` via the React Router splat. A `postMessage` bridge lets the garden app hide/restore the bottom nav when its own modals open.
+- **Iframe safety guards**: `BottomNav` and `GardenFrame` both bail out (`return null`) when running inside an iframe, preventing recursive self-loading in development. A dev-mode placeholder is shown on `localhost` since the garden SPA only runs on the Pi.
+
+### Technical
+- `apps/dashboard/src/components/WhatsGrowing.js` / `WhatsGrowing.css`: `parseName()` helper splits variety names; carousel layout; image opacity transition; `Link` to `/garden/seed/:id`; `localStorage` garden-enabled check.
+- `apps/dashboard/src/components/GardenFrame.js` / `GardenFrame.css` (new): Fixed iframe overlay; `postMessage` listener for `garden-modal-open`/`garden-modal-close`; `isDev` placeholder; `isInsideIframe` guard.
+- `apps/dashboard/src/components/BottomNav.js` / `BottomNav.css`: Garden tab with `NavLink`; `localStorage` persistence via `useEffect`; `window.self !== window.top` iframe guard; `body.garden-modal-open` CSS to hide nav when garden modal is open.
+- `apps/dashboard/src/App.js`: `<Route path="/garden/*" element={<GardenFrame />} />` added before catch-all routes.
+- Dashboard and backend versions bumped to `1.5.3`.
 
 ## [1.5.2] - 2026-03-09
 

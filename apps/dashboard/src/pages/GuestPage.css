@@ -26,6 +26,7 @@
   padding-bottom: var(--space-8);
   font-family: var(--font-primary);
   color: var(--text-primary);
+  overflow-x: hidden; /* prevent panel overflow from growing page */
 }
 
 /* ─── Dark canvas (always — even in light mode) ────────────── */
@@ -55,6 +56,10 @@ body.theme-dark .guest-page {
   --accent-overlay-hover: rgba(125, 170, 204, 0.28);
   --accent-overlay-subtle: rgba(125, 170, 204, 0.1);
   box-shadow: 0 0 80px rgba(0, 0, 0, 0.6);
+}
+
+body.theme-dark .quick-forecast-day {
+  background: rgba(255, 255, 255, 0.06);
 }
 
 body.theme-dark .day-modal,
@@ -219,6 +224,14 @@ body.theme-dark .day-modal-back:hover {
   position: relative;
 }
 
+/* Clip forecast carousel to the card boundary so it scrolls inside.
+   min-width: 0 is critical — grid children default to min-width: auto,
+   which lets forecast cards push the column wider than its 2fr allocation. */
+.quick-item--weather {
+  overflow: hidden;
+  min-width: 0;
+}
+
 .quick-item-icon {
   position: absolute;
   top: var(--space-4);
@@ -273,7 +286,17 @@ body.theme-dark .day-modal-back:hover {
 
 .quick-forecast {
   display: flex;
-  gap: var(--space-2);
+  gap: var(--space-3);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+}
+
+.quick-forecast::-webkit-scrollbar {
+  display: none;
 }
 
 .quick-forecast-day {
@@ -281,10 +304,11 @@ body.theme-dark .day-modal-back:hover {
   flex-direction: column;
   align-items: center;
   gap: var(--space-1);
-  flex: 1;
+  flex: 1 0 100px; /* grow to fill when few days (3–5); never shrinks — overflows+scrolls for 7-day visits */
   background: rgba(0, 0, 0, 0.04);
   border-radius: var(--radius-lg);
-  padding: var(--space-2) var(--space-1);
+  padding: var(--space-2) var(--space-2);
+  scroll-snap-align: start;
 }
 
 .qf-name {
@@ -946,21 +970,21 @@ body.theme-dark .day-modal-back:hover {
 
 .about-card {
   display: flex;
-  gap: var(--space-5);
-  align-items: flex-start;
+  flex-direction: column;
+  gap: var(--space-4);
   background: var(--bg-card-tint);
   border-radius: var(--radius-lg);
-  padding: var(--space-5);
+  overflow: hidden;
+  padding: 0;
 }
 
 .about-card-img {
-  width: 160px;
-  height: 120px;
+  width: 100%;
+  height: 220px;
   object-fit: cover;
-  object-position: center top;
-  border-radius: var(--radius-md);
-  flex-shrink: 0;
+  object-position: center 30%;
   display: block;
+  flex-shrink: 0;
 }
 
 .about-card-body {
@@ -968,6 +992,8 @@ body.theme-dark .day-modal-back:hover {
   flex-direction: column;
   gap: var(--space-3);
   min-width: 0;
+  padding: var(--space-5);
+  padding-top: var(--space-4);
 }
 
 /* ─── Back Home ────────────────────────────────────────────── */
@@ -1358,6 +1384,23 @@ body.theme-dark .day-modal-back:hover {
 
   .day-option-card {
     width: 220px;
+  }
+
+  .about-card {
+    flex-direction: row;
+    align-items: flex-start;
+    padding: var(--space-5);
+  }
+
+  .about-card-img {
+    width: 160px;
+    height: 120px;
+    border-radius: var(--radius-md);
+    flex-shrink: 0;
+  }
+
+  .about-card-body {
+    padding: 0;
   }
 }
 
