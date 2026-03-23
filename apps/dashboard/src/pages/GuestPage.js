@@ -53,7 +53,7 @@ function useHomeTime(timezone) {
 // Translate helper — picks lang from a bilingual field
 function makeT(lang) {
   return function $(field) {
-    if (field && typeof field === 'object' && ('nl' in field || 'en' in field)) {
+    if (field && typeof field === 'object' && ('da' in field || 'en' in field)) {
       return field[lang] ?? field.en ?? '';
     }
     return field ?? '';
@@ -84,7 +84,7 @@ function WeatherQuickCard({ weatherData, lang, $, useCelsius }) {
 
   const getDayLabel = (ts) => {
     const date = new Date(ts * 1000);
-    const abbr = date.toLocaleDateString(lang === 'nl' ? 'nl-NL' : 'en-US', { weekday: 'short' })
+    const abbr = date.toLocaleDateString(lang === 'da' ? 'da-DK' : 'en-US', { weekday: 'short' })
       .toUpperCase().replace(/\./g, '');
     const dayNum = date.getDate();
     return { abbr, dayNum };
@@ -201,7 +201,7 @@ function DayModal({ day, isOpen, onClose, lang, $ }) {
                     <p className="day-option-note">{$(opt.note)}</p>
                     {opt.href && (
                       <a href={opt.href} target="_blank" rel="noopener noreferrer" className="day-option-link">
-                        {lang === 'nl' ? 'Meer info' : 'Learn more'} →
+                        {lang === 'da' ? 'Mere info' : 'Learn more'} →
                       </a>
                     )}
                   </div>
@@ -341,11 +341,11 @@ function GuestbookSection({ visitId, $ }) {
 const HISTORY_SECTIONS = [
   {
     heading: {
-      nl: 'De oorsprong van Tower Hill Station',
+      da: 'Tower Hill Stations oprindelse',
       en: 'The Origin of Tower Hill Station',
     },
     body: {
-      nl: 'Aan de overkant van Plain Road, waar nu de parkeerplaats is, bevond zich het Tower Hill-treinstation. Het werd opgericht toen de Massachusetts Central Railroad in 1881 een lijn door Wayland opende. De naam is afkomstig van een houten toren op twee verdiepingen die de Bostoniaanse advocaat en dichter Richard Frederick Fuller rond 1860 bovenop de heuvel op zijn boerderij bouwde — een terrein dat hij Tower Hill noemde. De houten toren brandde af en werd in 1929 vervangen door een stenen toren die nog altijd staat als onderdeel van het huis op 157 Plain Road.',
+      da: 'På den anden side af Plain Road, hvor parkeringspladsen nu er, lå Tower Hill jernbanestation, oprettet da Massachusetts Central Railroad åbnede gennem Wayland i 1881. Navnet kom fra et totages trætårn bygget af Boston-advokat og digter Richard Frederick Fuller omkring 1860 øverst på bakken på hans landbrug, som han kaldte Tower Hill. Trætårnet brændte ned, og i 1929 blev det erstattet af et stentårn, der stadig står i dag som en del af huset på 157 Plain Road.',
       en: 'Across Plain Road, where the parking lot is now, is the site of Tower Hill railroad station, established when the Massachusetts Central Railroad opened through Wayland in 1881. Its name came from a two-story wooden tower built by Boston lawyer and poet Richard Frederick Fuller about 1860 at the top of the hill on his farmland, which he called Tower Hill. The wooden tower burned and in 1929 was replaced with a stone tower that still stands today as part of the house at 157 Plain Road.',
     },
     photos: [
@@ -354,11 +354,11 @@ const HISTORY_SECTIONS = [
   },
   {
     heading: {
-      nl: 'Het tweede station & de vlaghalte',
+      da: 'Den anden station & flagstoppestedet',
       en: 'The Second Station & The Flag Stop',
     },
     body: {
-      nl: 'Het oorspronkelijke kleine houten stationsgebouw brandde af in 1892 en werd vervangen door een groter gebouw door de Boston & Maine Railroad, die de lijn inmiddels beheerde. De stationsbeambte verkocht kaartjes, behandelde bagage en liet de overwegbomen zakken als er treinen naderden. Voor de meeste treinen was dit een "vlaghalte" — treinen stopten alleen als de beambte of een passagier het sein gaf. Naarmate het reizigersaantal afnam, werd de functie van stationsbeambte in 1920 afgeschaft, maar het station bleef open als schuilplaats.',
+      da: 'Den originale lille træstationsbygning brændte ned i 1892 og blev erstattet af en større stationsbygning af Boston & Maine Railroad, som på det tidspunkt drev denne linje. Stationsagenten solgte billetter, håndterede bagage og sænkede jernbaneoverskæringsbommene, når tog nærmede sig. For de fleste tog var dette et "flagstoppested" — tog stoppede kun, når agenten eller en passager satte signalet for at signalere lokomotivføreren. Da passagertallet faldt, blev agentens stilling afskaffet i 1920, men stationen forblev åben som shelter.',
       en: 'The original small wooden station burned in 1892 and was replaced with a larger station building by the Boston & Maine Railroad, which by then was operating this line. The station agent sold tickets, handled baggage, and lowered the crossing gates when trains approached. For most trains this was a "flag stop" — trains would only stop when the agent or a passenger set the signal, signaling the approaching engineer to stop. As ridership declined, the agent\'s job was abolished in 1920, but the station remained open as a shelter.',
     },
     photos: [
@@ -368,11 +368,11 @@ const HISTORY_SECTIONS = [
   },
   {
     heading: {
-      nl: 'Het forenzentijdperk',
+      da: 'Pendlertiden',
       en: 'The Commuter Era',
     },
     body: {
-      nl: 'Stoommachines vervoerden forensen van Wayland naar Boston tot halverwege de twintigste eeuw. In april 1956 werden stoommachines vervangen door diesellocomotieven — een van de laatste handelingen op een stervende lijn.',
+      da: 'Damplokomotiver transporterede pendlere fra Wayland til Boston op til midten af det tyvende århundrede. I april 1956 blev damp erstattet af diesellokomotiver — en af de sidste handlinger på en aftagende linje.',
       en: 'Steam locomotives carried commuters from Wayland to Boston through the mid-twentieth century. By April 1956, steam was replaced by diesels — one of the last acts of a dwindling line.',
     },
     photos: [
@@ -381,11 +381,11 @@ const HISTORY_SECTIONS = [
   },
   {
     heading: {
-      nl: 'De laatste decennia van het station',
+      da: 'Stationens sidste årtier',
       en: 'The Station\'s Final Decades',
     },
     body: {
-      nl: 'In april 1955 werd het oude stationsgebouw dichtgetimmerd en vervangen door een kleine open schuilplaats. In 1944 had de spoorweg het gebouw verkocht aan Joseph H. Decatur, een lokale boer. De gemeente kocht het land in 1960 en sloopte het stationsgebouw datzelfde jaar. De laatste passagierstrein reed in 1971. De open schuilplaats werd afgebroken in 1996.',
+      da: 'I april 1955 blev den gamle stationsbygning bræddet til og erstattet af et lille åbent shelter. I 1944 solgte jernbanen bygningen til Joseph H. Decatur, en lokal landmand. Kommunen erhvervede grunden i 1960 og rev stationsbygningen ned samme år. Det sidste passagertog kørte i 1971. Det åbne shelter blev revet ned i 1996.',
       en: 'In April 1955 the old station building was boarded up and replaced by a small open shelter. In 1944 the railroad sold the building to Joseph H. Decatur, a local farmer. The town acquired the land in 1960 and demolished the station building that same year. The last passenger train ran in 1971. The open shelter was torn down in 1996.',
     },
     photos: [
@@ -395,11 +395,11 @@ const HISTORY_SECTIONS = [
   },
   {
     heading: {
-      nl: 'De enige resterende herinnering',
+      da: 'Den eneste tilbageværende erindring',
       en: 'The Only Remaining Reminder',
     },
     body: {
-      nl: 'Het bord op de kruising van Plain Road en Route 20 is de enige resterende fysieke herinnering aan de naam "Tower Hill".',
+      da: 'Skiltet ved krydset af Plain Road og Route 20 er den eneste tilbageværende fysiske erindring om navnet "Tower Hill".',
       en: 'The sign at the intersection of Plain Road and Route 20 is the only remaining physical reminder of the name "Tower Hill."',
     },
     photos: [
@@ -408,11 +408,11 @@ const HISTORY_SECTIONS = [
   },
   {
     heading: {
-      nl: 'Het Mass Central Rail Trail',
+      da: 'Mass Central Rail Trail',
       en: 'The Mass Central Rail Trail',
     },
     body: {
-      nl: 'Het Central Mass Branch van de B&M Railroad liep ooit van North Station in Boston tot Northampton. Gouverneur Calvin Coolidge nam deze trein dagelijks naar het State House, vlak na de Eerste Wereldoorlog. De orkaan van 1938 verbrak de spoorlijn in het midden van de staat. Nu, bijna een eeuw later, wordt het oude spooreigendom omgebouwd tot een gedeeld fiets- en wandelpad door toegewijde vrijwilligers, gemeenten en landstichtingen in 26 gemeenschappen — 104 mijl, van Boston tot Northampton.',
+      da: 'B&M Railroads Central Mass Branch strakte sig engang fra North Station, Boston, til Northampton. Guvernør Calvin Coolidge tog dette tog dagligt til State House lige efter Første Verdenskrig. Orkanen i 1938 brød jernbanen midt i staten. Nu, næsten et århundrede senere, er den gamle jernbaneejendom ved at blive omdannet til en delt gangsti af engagerede frivillige, kommuner og landfonde på tværs af 26 samfund — 104 miles, Boston til Northampton.',
       en: 'The B&M Railroad\'s Central Mass Branch once stretched from North Station, Boston, to Northampton. Governor Calvin Coolidge rode this train daily to the State House just after World War I. The Hurricane of 1938 broke the railroad in the center of the state. Now, almost a century later, the old railroad property is being transformed into a shared-use path by dedicated volunteers, municipalities, and land trusts across 26 communities — 104 miles, Boston to Northampton.',
     },
     photos: [
@@ -460,14 +460,14 @@ function HistoryModal({ isOpen, onClose, $ }) {
 // ─── Main page ─────────────────────────────────────────────────────────────────
 
 export default function GuestPage({ weatherData }) {
-  const [lang, setLang]           = useState('nl');
+  const [lang, setLang]           = useState('da');
   const [openDay,   setOpenDay]   = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [homeInstructionsOpen, setHomeInstructionsOpen] = useState(false);
 
   const $ = useCallback(makeT(lang), [lang]);
-  const useCelsius = lang === 'nl';
+  const useCelsius = lang === 'da';
 
   const onChangeTheme = useCallback(() => {
     const current = localStorage.getItem('themeOverride');
@@ -510,9 +510,9 @@ export default function GuestPage({ weatherData }) {
         </div>
         <div className="guest-lang-toggle">
           <button
-            className={`guest-lang-btn${lang === 'nl' ? ' active' : ''}`}
-            onClick={() => setLang('nl')}
-          >NL</button>
+            className={`guest-lang-btn${lang === 'da' ? ' active' : ''}`}
+            onClick={() => setLang('da')}
+          >DA</button>
           <span className="guest-lang-sep">·</span>
           <button
             className={`guest-lang-btn${lang === 'en' ? ' active' : ''}`}
@@ -551,7 +551,7 @@ export default function GuestPage({ weatherData }) {
             </svg>
             <div className="quick-item-label">{$(VISIT.ui.homeLabel)}</div>
             <button className="quick-link home-instructions-link" onClick={() => setHomeInstructionsOpen(true)}>
-              {lang === 'nl' ? 'Zie instructies →' : 'See instructions →'}
+              {lang === 'da' ? 'Se instruktioner →' : 'See instructions →'}
             </button>
             <a href={googleHomeUrl} target="_blank" rel="noopener noreferrer" className="quick-link">
               {$(VISIT.ui.openHome)} →
