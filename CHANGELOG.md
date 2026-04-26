@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.6] - 2026-04-26
+
+### Fixed
+- **Garden carousel hidden on towerhill.app**: The "What's Growing" thumbnail carousel no longer renders on the external Cloudflare tunnel, even when `?garden=1` is present in the URL. Carousel is now gated behind `isLocalAccess()` — visible only on towerhill.local, localhost, and private IPs.
+
+### Technical
+- `apps/dashboard/src/components/WhatsGrowing.js`: `showGarden` now requires `isLocalAccess() && ?garden=1` (was `?garden=1` only).
+
 ## [1.5.5] - 2026-03-23
 
 ### Changed
