@@ -88,7 +88,7 @@
 }
 
 .metric-detail-label {
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-weight: var(--weight-semibold);
   color: var(--text-primary);
   line-height: 1.25;
@@ -117,7 +117,7 @@
 
 .metric-detail-value-block {
   font-family: 'Fraunces', var(--font-display);
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 500;
   line-height: 1;
   color: var(--text-primary);
@@ -132,7 +132,7 @@
 }
 
 .metric-detail-value-unit {
-  font-size: 1.25rem;
+  font-size: 1rem;
   color: var(--text-primary);
   font-weight: var(--weight-medium);
   line-height: 1;
@@ -261,7 +261,7 @@
 }
 
 body.theme-dark .chart-hover-manual {
-  color: var(--accent-blue);
+  color: var(--accent);
 }
 
 /* Footer: on mobile, column-reverse so hover hint appears above nav; on tablet/desktop, row with nav left, badge right */
@@ -367,7 +367,7 @@ body.theme-dark .metric-detail-chart-hover-badge__value {
 body.theme-dark .metric-detail-precip-action-btn:hover,
 body.theme-dark .metric-detail-precip-action-btn.active {
   background: var(--accent-overlay-hover);
-  color: var(--accent-blue);
+  color: var(--accent);
 }
 
 /* Icon size in precip action buttons (Edit, History) */
@@ -546,7 +546,7 @@ body.theme-dark .metric-detail-precip-form .precip-amount-spinner-btn {
 
 body.theme-dark .metric-detail-precip-form .precip-amount-spinner-btn:hover:not(:disabled) {
   background: var(--accent-overlay-hover);
-  color: var(--accent-blue);
+  color: var(--accent);
 }
 
 .metric-detail-precip-form .form-group input:focus,
@@ -666,7 +666,7 @@ body.theme-dark .metric-detail-precip-form .precip-time-spinner-btn {
 
 body.theme-dark .metric-detail-precip-form .precip-time-spinner-btn:hover:not(:disabled) {
   background: var(--accent-overlay-hover);
-  color: var(--accent-blue);
+  color: var(--accent);
 }
 
 .metric-detail-precip-form .precip-time-picker select {
@@ -796,14 +796,20 @@ body.theme-dark .metric-detail-precip-form .precip-type-option.selected {
   background: var(--bg-primary);
   border: 1px solid var(--border-light);
   height: 32px;
+  min-height: 32px;
+  align-items: stretch;
 }
 
 .metric-detail-chart-pill .time-range-button {
-  padding: 0.25rem 0.625rem;
-  height: 32px;
-  min-height: 32px;
+  padding: 0.25rem 0.75rem;
+  height: 30px;
+  min-height: 30px;
+  line-height: 1;
   font-size: 0.75rem;
   background: var(--bg-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Light mode: tan shades to match theme — no teal */
@@ -814,7 +820,7 @@ body.theme-dark .metric-detail-precip-form .precip-type-option.selected {
 
 body.theme-dark .metric-detail-chart-pill .time-range-button.active {
   background: var(--accent-overlay-hover);
-  color: var(--accent-blue);
+  color: var(--accent);
 }
 
 /* Chart area below controls */
@@ -834,6 +840,54 @@ body.theme-dark .metric-detail-chart-pill .time-range-button.active {
 .metric-detail-chart-scroll-inner {
   min-height: 280px;
   height: 100%;
+  position: relative;
+}
+
+/* Desktop: hover tooltip overlays chart, upper left, semi-transparent */
+.metric-detail-chart-hover-overlay {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.metric-detail-chart-hover-overlay .metric-detail-chart-hover-badge__value {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+body.theme-dark .metric-detail-chart-hover-overlay .metric-detail-chart-hover-badge__value {
+  background: rgba(26, 26, 46, 0.85);
+}
+
+/* Mobile: tap badge overlays chart, positioned near tapped point */
+.metric-detail-chart-tap-badge {
+  position: absolute;
+  bottom: 0.5rem;
+  transform: translateX(-50%);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.metric-detail-chart-tap-badge .metric-detail-chart-hover-badge__value {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  background: var(--overlay-on-light-hover);
+  white-space: normal;
+  text-align: center;
+  max-width: 160px;
+}
+
+body.theme-dark .metric-detail-chart-tap-badge .metric-detail-chart-hover-badge__value {
+  background: var(--accent-overlay-hover);
 }
 
 .metric-detail-mobile-axis-rail {
@@ -989,7 +1043,7 @@ body.theme-dark .metric-detail-pagination-btn:hover {
 
 body.theme-dark .metric-detail-pagination-btn.active {
   background: var(--accent-overlay-hover);
-  color: var(--accent-blue);
+  color: var(--accent);
 }
 
 .metric-detail-pagination-btn:focus-visible {
@@ -998,22 +1052,30 @@ body.theme-dark .metric-detail-pagination-btn.active {
 }
 
 body.theme-dark .metric-detail-pagination-btn:focus-visible {
-  outline: 2px solid var(--accent-blue);
+  outline: 2px solid var(--accent);
 }
 
-/* Pressure unit toggle: inHg | mb, match menu button stroke and colors */
+/* Pressure unit toggle: inHg | mb, match time range selector height exactly */
 .metric-detail-pressure-unit-pill {
   display: inline-flex;
+  align-items: stretch;
   background: var(--bg-primary);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-pill);
   overflow: hidden;
   font-size: 0.75rem;
+  height: 32px;
+  min-height: 32px;
 }
 
 .metric-detail-unit-btn {
-  padding: 0.2rem 0.5rem;
-  min-height: 24px;
+  padding: 0.25rem 0.75rem;
+  height: 30px;
+  min-height: 30px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: transparent;
   border: none;
   color: var(--text-primary);
@@ -1068,7 +1130,7 @@ body.theme-dark .metric-detail-unit-btn:hover:not(.active) {
 }
 
 body.theme-dark .loading-spinner {
-  border-top-color: var(--accent-blue);
+  border-top-color: var(--accent);
 }
 
 @keyframes spin {
@@ -1107,12 +1169,12 @@ body.theme-dark .loading-spinner {
 }
 
 body.theme-dark .retry-button:hover {
-  border-color: var(--accent-blue);
-  color: var(--accent-blue);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 body.theme-dark .retry-button:focus-visible {
-  outline: 2px solid var(--accent-blue);
+  outline: 2px solid var(--accent);
 }
 
 
@@ -1129,11 +1191,11 @@ body.theme-dark .retry-button:focus-visible {
   }
 
   .metric-detail-label {
-    font-size: 1.25rem;
+    font-size: 1rem;
   }
 
   .metric-detail-value-block {
-    font-size: 2rem;
+    font-size: 1.75rem;
   }
 
   .metric-detail-controls {

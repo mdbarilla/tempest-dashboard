@@ -2,6 +2,8 @@
   position: relative;
   display: inline-flex;
   align-items: center;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .unified-menu-trigger {
@@ -32,13 +34,14 @@
 body.theme-dark .unified-menu-trigger:hover,
 body.theme-dark .unified-menu-trigger[aria-expanded="true"] {
   background: var(--accent-overlay-hover);
-  color: var(--accent-blue);
+  color: var(--accent);
 }
 
 .unified-menu-dropdown {
   position: absolute;
   top: 100%;
   right: 0;
+  left: auto;
   margin-top: 0.25rem;
   min-width: 180px;
   padding: 0.25rem;
@@ -47,18 +50,6 @@ body.theme-dark .unified-menu-trigger[aria-expanded="true"] {
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-soft);
   z-index: 100;
-}
-
-/* Desktop: menu opens to the left of the button */
-@media (min-width: 768px) {
-  .unified-menu-dropdown {
-    top: 50%;
-    right: 100%;
-    left: auto;
-    margin-top: 0;
-    margin-right: 0.25rem;
-    transform: translateY(-50%);
-  }
 }
 
 .unified-menu-item {

@@ -1,3 +1,6 @@
+/* @todo DESIGN (1.5.8+ draft): Refresh day cards to align with glass / editorial metric cards
+   (radius, border, hover, typography). See docs/drafts/RELEASE-1.5.8-DRAFT.md */
+
 .forecast-section {
   background: var(--bg-secondary);
   border-top: 1px solid var(--border-light);
@@ -161,7 +164,7 @@ body.theme-dark .forecast-day-card:hover {
 .forecast-precip {
   font-size: 0.75rem;
   font-weight: var(--weight-medium);
-  color: var(--accent-blue);
+  color: var(--accent);
   margin-top: 0.5rem;
   opacity: var(--opacity-strong);
 }

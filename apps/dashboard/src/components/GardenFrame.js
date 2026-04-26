@@ -1,27 +1,66 @@
 /**
- * GardenFrame — renders the garden SPA in a fixed full-screen iframe.
- * The route is /garden/* so the splat path is forwarded to the iframe src,
- * allowing seed deep-links (e.g. /garden/seed/123) to open the correct page.
+ * GardenFrame — full-screen iframe for the garden SPA.
+ * Route /garden/* forwards the splat to the iframe (e.g. /garden/seed/123).
  *
- * postMessage bridge: the garden app can send
- *   { type: 'garden-modal-open' }  → hides the bottom nav
- *   { type: 'garden-modal-close' } → restores the bottom nav
+ * Local dev: garden CRA runs on port 3002 (see Garden/app/package.json).
+ * Pi / production: same origin under /garden/.
+ *
+ * postMessage bridge:
+ *   { type: 'garden-modal-open' | 'garden-modal-close' } → bottom nav visibility
+ * Parent → iframe: { type: 'towerhill-parent-theme', themeDark } → match dashboard theme
  */
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import SharedHeaderRow from './SharedHeaderRow';
 import './GardenFrame.css';
+
+const DEFAULT_GARDEN_DEV_ORIGIN = 'http://localhost:3002';
+
+function buildGardenIframeSrc(splat) {
+  const path = splat ? String(splat).replace(/^\/+/, '') : '';
+  const h = window.location.hostname;
+
+  if (h === 'localhost' || h === '127.0.0.1') {
+    const base = (process.env.REACT_APP_GARDEN_DEV_ORIGIN || DEFAULT_GARDEN_DEV_ORIGIN).replace(/\/$/, '');
+    return path ? `${base}/${path}` : `${base}/`;
+  }
+
+  const origin = window.location.origin.replace(/\/$/, '');
+  return path ? `${origin}/garden/${path}` : `${origin}/garden/`;
+}
+
+function postThemeToIframe(iframe, iframeSrc, themeDark) {
+  if (!iframe?.contentWindow) return;
+  try {
+    const targetOrigin = new URL(iframeSrc).origin;
+    iframe.contentWindow.postMessage(
+      { type: 'towerhill-parent-theme', themeDark: Boolean(themeDark) },
+      targetOrigin
+    );
+  } catch {
+    // ignore
+  }
+}
 
 export default function GardenFrame() {
   const { '*': splat } = useParams();
+  const iframeRef = useRef(null);
 
-  // Detect recursive load: in dev the iframe src resolves to this same React app.
-  // In production the iframe loads the separate garden SPA so this is always false there.
   const isInsideIframe = window.self !== window.top;
 
-  const src = `${window.location.origin}/garden/${splat || ''}`;
+  const iframeSrc = useMemo(() => {
+    if (isInsideIframe) return '';
+    return buildGardenIframeSrc(splat);
+  }, [splat, isInsideIframe]);
 
-  // Always run hooks unconditionally (React rules), guard the side-effect body instead.
+  // Chrome around iframe uses garden palette; restore when leaving route.
+  useEffect(() => {
+    if (isInsideIframe) return;
+    document.body.classList.add('route-garden');
+    return () => {
+      document.body.classList.remove('route-garden');
+    };
+  }, [isInsideIframe]);
+
   useEffect(() => {
     if (isInsideIframe) return;
     const handleMessage = (e) => {
@@ -41,41 +80,38 @@ export default function GardenFrame() {
     };
   }, [isInsideIframe]);
 
-  // Bail out if we're inside an iframe — prevents recursive self-loading in dev.
-  if (isInsideIframe) return null;
+  // Sync dashboard light/dark to iframe (separate origin in dev).
+  useEffect(() => {
+    if (isInsideIframe || !iframeSrc) return;
 
-  // In dev on localhost the garden SPA isn't running — show a placeholder instead
-  // of a blank iframe. On the Pi (towerhill.local) the real garden SPA loads.
-  const isDev = window.location.hostname === 'localhost';
+    const iframe = iframeRef.current;
+    const send = () => postThemeToIframe(iframe, iframeSrc, document.body.classList.contains('theme-dark'));
+
+    const onLoad = () => {
+      requestAnimationFrame(send);
+    };
+
+    if (iframe) iframe.addEventListener('load', onLoad);
+
+    const mo = new MutationObserver(send);
+    mo.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+    return () => {
+      if (iframe) iframe.removeEventListener('load', onLoad);
+      mo.disconnect();
+    };
+  }, [isInsideIframe, iframeSrc]);
+
+  if (isInsideIframe) return null;
 
   return (
     <div className="garden-frame-wrap">
-      <header className="garden-frame-header">
-        <div className="garden-frame-location">
-          <h1 className="garden-frame-title">Tower Hill&nbsp;&nbsp;<span className="garden-frame-city">Wayland</span></h1>
-          <div className="garden-frame-header-row">
-            <SharedHeaderRow />
-          </div>
-        </div>
-      </header>
-      {isDev ? (
-        <div className="garden-frame-dev">
-          <p className="garden-frame-dev-label">Garden</p>
-          <p className="garden-frame-dev-note">
-            The garden app is available at{' '}
-            <a href="http://towerhill.local/garden" target="_blank" rel="noreferrer">
-              towerhill.local/garden
-            </a>
-            . It will load here when accessed from the Pi.
-          </p>
-        </div>
-      ) : (
-        <iframe
-          src={src}
-          className="garden-frame"
-          title="Garden"
-        />
-      )}
+      <iframe
+        ref={iframeRef}
+        src={iframeSrc}
+        className="garden-frame"
+        title="Garden"
+      />
     </div>
   );
 }

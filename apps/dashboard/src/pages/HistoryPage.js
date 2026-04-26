@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import WeatherIcon from '../components/WeatherIcon';
+import SharedHeaderRow from '../components/SharedHeaderRow';
 import './HistoryPage.css';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api/weather';
@@ -30,6 +31,20 @@ function getMaxDate() {
   const d = new Date();
   d.setDate(d.getDate() + 10);
   return toLocalDateInputValue(d);
+}
+
+function formatWindCell(row) {
+  if (row.windSpeed == null && row.windGust == null && row.windLull == null) return '—';
+  const parts = [];
+  if (row.windLull != null && row.windGust != null && row.windSpeed != null) {
+    parts.push(`${row.windLull}–${row.windGust} mph`);
+  } else if (row.windSpeed != null && row.windGust != null && row.windSpeed !== row.windGust) {
+    parts.push(`${row.windSpeed} mph (gusts ${row.windGust})`);
+  } else if (row.windSpeed != null) {
+    parts.push(`${row.windSpeed} mph`);
+  }
+  if (row.windDirection && parts.length) parts.push(row.windDirection);
+  return parts.length ? parts.join(' ') : '—';
 }
 
 const HistoryPage = ({ lastUpdate }) => {
@@ -74,30 +89,17 @@ const HistoryPage = ({ lastUpdate }) => {
     navigate(newDate === today ? '/history' : `/history/${newDate}`, { replace: true });
   };
 
-  const lastMainView = localStorage.getItem('lastMainView') || 'dashboard';
-  const mainLabel = lastMainView === 'currently' ? 'Currently' : 'Dashboard';
-  const mainPath = lastMainView === 'currently' ? '/conditions' : '/';
-
   return (
     <div className="history-page">
       <header className="history-header">
         <div className="history-header-inner">
-          <h1 className="history-title">Tower Hill&nbsp;&nbsp;<span className="history-title-city">Wayland</span></h1>
+          <h1 className="history-title">
+            <span className="th-brand-name">Tower Hill</span>
+            &nbsp;&nbsp;
+            <span className="history-title-city">Wayland</span>
+          </h1>
           <div className="history-header-row">
-            <span className="page-and-update-mobile">
-              History • {lastUpdate ? `Updated ${lastUpdate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}` : '—'}
-            </span>
-            <span className="history-nav-desktop">
-              <p className="history-updated">
-                {lastUpdate ? `Updated ${lastUpdate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : '—'}
-              </p>
-              <span className="history-nav-sep" aria-hidden="true">•</span>
-              <Link to={mainPath} className="history-nav-link">{mainLabel}</Link>
-              <span className="history-nav-sep" aria-hidden="true">•</span>
-              <span className="header-nav-active">History</span>
-              <span className="history-nav-sep" aria-hidden="true">•</span>
-              <Link to="/chat" className="history-nav-link">Ask</Link>
-            </span>
+            <SharedHeaderRow />
           </div>
         </div>
         <div className="history-date-wrap">
@@ -128,11 +130,25 @@ const HistoryPage = ({ lastUpdate }) => {
       )}
 
       {!loading && !error && data && (() => {
-        const hasWeatherData = (r) => !!(r.conditions ?? r.tempF ?? r.feelsLikeF ?? r.humidity ?? r.windSpeed ?? r.pressureInHg ?? r.precipPct ?? r.precipAmount);
+        // Use explicit null/undefined checks — 0°F, 0% precip, 0 mph wind are valid and must not be treated as "empty".
+        const hasWeatherData = (r) =>
+          (r.conditions != null && String(r.conditions).trim() !== '') ||
+          r.tempF != null ||
+          r.feelsLikeF != null ||
+          r.humidity != null ||
+          r.windSpeed != null ||
+          r.windGust != null ||
+          r.windLull != null ||
+          r.pressureInHg != null ||
+          r.precipPct != null ||
+          (r.precipAmount != null && r.precipAmount !== '') ||
+          r.manualPrecip != null ||
+          r.corrected === true;
         const filtered = data.filter((r) => hasWeatherData(r));
         const nowUnix = Math.floor(Date.now() / 1000);
-        const observedRows = filtered.filter((row) => row.timestamp <= nowUnix);
-        const forecastRows = filtered.filter((row) => row.timestamp > nowUnix);
+        const rowTime = (row) => Number(row.timestamp);
+        const observedRows = filtered.filter((row) => rowTime(row) <= nowUnix);
+        const forecastRows = filtered.filter((row) => rowTime(row) > nowUnix);
         const COLUMN_COUNT = 9;
         return (
           <div className="history-table-wrap">
@@ -185,11 +201,7 @@ const HistoryPage = ({ lastUpdate }) => {
                     <td className="history-cell-feels">{row.feelsLikeF != null ? `${row.feelsLikeF} °F` : '—'}</td>
                     <td>{row.humidity != null ? `${row.humidity}%` : '—'}</td>
                     <td className="history-cell-wind">
-                      {row.windSpeed != null && row.windDirection
-                        ? `${row.windSpeed} mph ${row.windDirection}`
-                        : row.windSpeed != null
-                          ? `${row.windSpeed} mph`
-                          : '—'}
+                      {formatWindCell(row)}
                     </td>
                     <td>{row.pressureInHg != null ? `${row.pressureInHg} in` : '—'}</td>
                     <td>{row.precipPct != null ? `${row.precipPct}%` : '—'}</td>
@@ -233,11 +245,7 @@ const HistoryPage = ({ lastUpdate }) => {
                     <td className="history-cell-feels">{row.feelsLikeF != null ? `${row.feelsLikeF} °F` : '—'}</td>
                     <td>{row.humidity != null ? `${row.humidity}%` : '—'}</td>
                     <td className="history-cell-wind">
-                      {row.windSpeed != null && row.windDirection
-                        ? `${row.windSpeed} mph ${row.windDirection}`
-                        : row.windSpeed != null
-                          ? `${row.windSpeed} mph`
-                          : '—'}
+                      {formatWindCell(row)}
                     </td>
                     <td>{row.pressureInHg != null ? `${row.pressureInHg} in` : '—'}</td>
                     <td>{row.precipPct != null ? `${row.precipPct}%` : '—'}</td>

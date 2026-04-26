@@ -10,10 +10,10 @@
   flex-direction: column;
 }
 
-/* Title */
+/* Title — sans shell (Dashboard / Currently style); Fraunces only on .th-brand-name */
 .history-title,
 .chat-title {
-  font-family: var(--font-display);
+  font-family: var(--font-primary);
   font-size: 1.75rem;
   font-weight: var(--weight-medium);
   letter-spacing: -0.02em;
@@ -23,6 +23,7 @@
 
 .history-title-city,
 .chat-title-city {
+  font-family: var(--font-primary);
   font-weight: var(--weight-regular);
   color: var(--text-secondary);
   font-size: 1.5rem;

@@ -1,6 +1,11 @@
 /**
- * Bottom navigation - mobile only (Dashboard, Currently, History, Ask)
+ * Bottom navigation - mobile only (Dashboard, Currently, History, Ask/Garden)
  */
+
+/* Hide nav when garden app modal is open (postMessage bridge) */
+body.garden-modal-open .bottom-nav {
+  display: none !important;
+}
 
 .bottom-nav {
   display: none;
@@ -40,7 +45,57 @@
   }
 
   .bottom-nav-item.active {
-    color: var(--accent-blue);
+    color: var(--accent);
+  }
+
+  .bottom-nav-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .bottom-nav-label {
+    font-size: var(--font-size-nav);
+    font-weight: var(--weight-medium);
+  }
+}
+
+/* Tablet portrait should match mobile: show BottomNav in portrait tablets too. */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: var(--bg-card-tint);
+    border-top: 1px solid var(--border-light);
+    padding: var(--space-2) var(--space-4);
+    gap: 0;
+    justify-content: space-around;
+    align-items: center;
+  }
+
+  .bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-4);
+    text-decoration: none;
+    color: var(--text-secondary);
+    border-radius: var(--radius-md);
+    transition: color var(--transition-hover), background var(--transition-hover);
+  }
+
+  .bottom-nav-item:hover {
+    color: var(--text-primary);
+    background: var(--bg-card-hover);
+  }
+
+  .bottom-nav-item.active {
+    color: var(--accent);
   }
 
   .bottom-nav-icon {

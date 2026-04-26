@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Planting guidance (Tower Hill cross-module):** Merged Tempest + NWS daily lows; 10-night freeze-free gate for “safe to plant out”; frost risk and warming-trend signals. `GET /api/weather/planting-guidance`; garden `GET /api/garden/dashboard` includes `planting_guidance`. **Shown only on the garden app** (`/garden/dashboard` — `GardenDashboardPage` planting strip), not on the main weather dashboard. Event bus emits `weather.frost.clear` / `weather.frost.risk` on first transition (see `backend/modules/weather/services/planting-guidance.js`).
+
+### Still open / deferred
+
+**Flag — 10-day forecast:** Update **forecast day card** design (`Forecast.js` / `Forecast.css`) in a future pass to match newer glass/editorial metric styling.
+
+**Garden module — further work:** Remaining items from 1.5.8 draft: `shouldShowGardenNav` tunnel/local verification on Pi; carousel empty-vs-error distinction on Pi (now tracked via `fetchError`); dedicated `GardenDashboardSection.css` split; breakpoint checklist. See `docs/drafts/RELEASE-1.5.8-DRAFT.md`.
+
+## [1.5.8] - 2026-04-09
+
+### Fixed
+- **Garden carousel — error state:** `WhatsGrowing` now tracks fetch errors separately from empty results. Dashboard variant shows “Could not reach the greenhouse…” on network failure instead of the generic “no seedlings” copy.
+- **Frost advisory — background bleed:** Added `overflow: hidden` to `.garden-forecast-section--frost-advisory` so the scaled + blurred `::before` photo no longer bleeds into the forecast section above or below.
+- **Garden section background:** Replaced the solid `--garden-surface` background with a `color-mix` blend (55% garden, 45% `--bg-secondary`) for both light and dark themes. The transition from the forecast band is now softer and less jarring against the app's warm-tan / navy base colors.
+
+### Technical
+- `apps/dashboard/src/components/WhatsGrowing.js`: `fetchError` state; reset on re-fetch; distinct error copy in dashboard empty state.
+- `apps/dashboard/src/components/CurrentWeather.css`: `overflow: hidden` on `--frost-advisory` modifier; `color-mix` background on `.garden-forecast-section` and `body.theme-dark .garden-forecast-section`.
+- `apps/dashboard/package.json`: bumped to `1.5.8`.
+
+### Deferred (tracked in draft)
+- Carousel / header visibility on tunnel (needs Pi test with `?garden=1`)
+- `GardenDashboardSection.css` dedicated file split
+- Metrics carousel scroll padding (≥1440px) and condition-tint contrast on glass cards
+
+## [1.5.7] - 2026-04-06
+
+### Changed
+- **Planting guidance surface:** Removed the `PlantingGuidance` block from the main weather dashboard (deleted `PlantingGuidance.js` / `.css`). Safe-to-plant / frost / warming copy remains on **Garden Overview** only (`GardenDashboardPage` planting strip via `planting_guidance`).
+
+## [1.5.6] - 2026-04-06
+
+### Fixed
+- **Unified overflow menu (⋯) placement**: Desktop CSS used `right: 100%` on the dropdown, which mis-anchored the panel when the menu wrapper was wider than the trigger (e.g. in flex layouts). The menu now always opens below the trigger, right-aligned; `.unified-menu` uses `width: fit-content` so the positioning box matches the button.
+
+### Technical
+- `apps/dashboard/src/components/UnifiedMenu.css`: Removed the `@media (min-width: 768px)` override; single rule for `.unified-menu-dropdown`; `width: fit-content` / `max-width: 100%` on `.unified-menu`.
+
 ## [1.5.5] - 2026-03-23
 
 ### Changed

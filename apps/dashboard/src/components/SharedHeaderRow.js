@@ -1,6 +1,7 @@
 import React from 'react';
 import UnifiedMenu from './UnifiedMenu';
 import { useAppMenu } from '../context/AppMenuContext';
+import SideNavToggle from './SideNavToggle';
 import './SharedHeaderRow.css';
 
 /**
@@ -15,6 +16,7 @@ const SharedHeaderRow = () => {
     : null;
   return (
     <div className="shared-header-row">
+      <SideNavToggle />
       {formattedTime && (
         <span className="shared-header-updated">
           Updated {formattedTime}

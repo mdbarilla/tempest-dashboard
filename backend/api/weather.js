@@ -23,6 +23,7 @@ function observationRowToCurrent(obs) {
     wind: {
       speed: obs.wind_speed,
       gust: obs.wind_gust != null ? obs.wind_gust : obs.wind_speed,
+      lull: obs.wind_lull ?? null,
       direction: obs.wind_direction,
       directionText: obs.wind_direction != null ? tempestAPI.getWindDirection(obs.wind_direction) : null
     },
@@ -196,6 +197,20 @@ router.get('/complete', async (req, res) => {
           entryCount: todayPrecip.length,
           isCumulative: true
         };
+      }
+
+      // When API returns 0 precip but we have a recent observation with precip, use it
+      const precipToday = data.current.precipitation?.today ?? 0;
+      const precipLastHour = data.current.precipitation?.lastHour ?? 0;
+      if (precipToday === 0 || precipLastHour === 0) {
+        const latestObs = await db.getLatestObservation(4 * 3600);
+        if (latestObs && (latestObs.precip_today > 0 || latestObs.precip_last_hour > 0)) {
+          data.current.precipitation = {
+            ...data.current.precipitation,
+            today: (latestObs.precip_today ?? 0) || precipToday,
+            lastHour: (latestObs.precip_last_hour ?? 0) || precipLastHour
+          };
+        }
       }
     }
 
@@ -408,13 +423,28 @@ router.get('/hourly/:date', async (req, res) => {
     const endUnix = Math.floor(dayEnd.getTime() / 1000);
     const nowUnix = Math.floor(Date.now() / 1000);
 
-    const rawObs = await db.getObservationsByTimestampRange(startUnix, endUnix, 5000);
+    let rawObs = await db.getObservationsByTimestampRange(startUnix, endUnix, 5000);
+    const isPastDate = endUnix < nowUnix;
+    const deviceIdForMerge = tempestAPI.deviceId || (process.env.TEMPEST_DEVICE_ID && String(process.env.TEMPEST_DEVICE_ID).trim()) || null;
+
+    // For past dates with no or sparse local observations, fetch from Tempest device API
+    if (isPastDate && deviceIdForMerge && rawObs.length < 12) {
+      try {
+        const deviceRows = await tempestAPI.getDeviceObservations(deviceIdForMerge, startUnix, endUnix);
+        if (deviceRows.length > 0) {
+          rawObs = [...rawObs, ...deviceRows].sort((a, b) => a.timestamp - b.timestamp);
+        }
+      } catch (err) {
+        console.warn('[hourly] Device observations fallback failed:', err.message);
+      }
+    }
+
     const byHour = new Map();
     for (const obs of rawObs) {
       const hourKey = Math.floor(Number(obs.timestamp) / 3600) * 3600;
       if (!byHour.has(hourKey)) {
         byHour.set(hourKey, {
-          count: 0, temp_f: 0, feels_f: 0, humidity: 0, wind: 0, wind_gust_max: null,
+          count: 0, temp_f: 0, feels_f: 0, humidity: 0, wind: 0, wind_gust_max: null, wind_lull_min: null,
           pressure: 0, precip: null, solar: 0, uv: 0, conditions: null, wind_direction: null
         });
       }
@@ -425,6 +455,7 @@ router.get('/hourly/:date', async (req, res) => {
       if (obs.humidity != null) b.humidity += obs.humidity;
       if (obs.wind_speed != null) b.wind += obs.wind_speed;
       if (obs.wind_gust != null) b.wind_gust_max = Math.max(b.wind_gust_max ?? 0, obs.wind_gust);
+      if (obs.wind_lull != null) b.wind_lull_min = b.wind_lull_min == null ? obs.wind_lull : Math.min(b.wind_lull_min, obs.wind_lull);
       if (obs.pressure_mb != null) b.pressure += obs.pressure_mb;
       if (obs.precip_today != null) b.precip = Math.max(b.precip ?? 0, obs.precip_today);
       if (obs.solar_radiation != null) b.solar += obs.solar_radiation;
@@ -438,6 +469,8 @@ router.get('/hourly/:date', async (req, res) => {
       const feelsF = bucket.count ? Math.round(bucket.feels_f / bucket.count) : tempF;
       const humidity = bucket.count ? Math.round(bucket.humidity / bucket.count) : null;
       const windSpeed = bucket.count ? Math.round(bucket.wind / bucket.count * 10) / 10 : null;
+      const windGust = bucket.wind_gust_max != null ? Math.round(bucket.wind_gust_max * 10) / 10 : null;
+      const windLull = bucket.wind_lull_min != null ? Math.round(bucket.wind_lull_min * 10) / 10 : null;
       const pressureMb = bucket.count ? bucket.pressure / bucket.count : null;
       const pressureInHg = pressureMb != null ? (pressureMb * 0.02953).toFixed(2) : null;
       const dp = (tempF != null && humidity != null) ? dewPoint(tempF, humidity) : null;
@@ -455,6 +488,8 @@ router.get('/hourly/:date', async (req, res) => {
         dewPointF,
         humidity,
         windSpeed,
+        windGust,
+        windLull,
         windDirection: windDir,
         pressureInHg
       };
@@ -467,9 +502,9 @@ router.get('/hourly/:date', async (req, res) => {
       if (bucket && bucket.count > 0) {
         rows.push(toRow(hourKey, { ...bucket, wind_direction: bucket.wind_direction }));
       } else if (hourKey > nowUnix) {
-        rows.push({ timestamp: hourKey, time: formatTime(hourKey), conditions: null, tempF: null, feelsLikeF: null, precipPct: null, precipAmount: null, cloudCover: null, dewPointF: null, humidity: null, windSpeed: null, windDirection: null, pressureInHg: null });
+        rows.push({ timestamp: hourKey, time: formatTime(hourKey), conditions: null, tempF: null, feelsLikeF: null, precipPct: null, precipAmount: null, cloudCover: null, dewPointF: null, humidity: null, windSpeed: null, windGust: null, windLull: null, windDirection: null, pressureInHg: null });
       } else {
-        rows.push(toRow(hourKey, { count: 0, temp_f: 0, feels_f: 0, humidity: 0, wind: 0, wind_gust_max: null, pressure: 0, precip: null, solar: 0, uv: 0, conditions: null, wind_direction: null }));
+        rows.push(toRow(hourKey, { count: 0, temp_f: 0, feels_f: 0, humidity: 0, wind: 0, wind_gust_max: null, wind_lull_min: null, pressure: 0, precip: null, solar: 0, uv: 0, conditions: null, wind_direction: null }));
       }
     }
 
@@ -500,6 +535,7 @@ router.get('/hourly/:date', async (req, res) => {
               const pressureMb = complete.current?.pressure?.mb;
               const pressureInHg = pressureMb != null ? (pressureMb * 0.02953).toFixed(2) : null;
               const conditions = hour.conditions || iconToConditions(hour.icon) || null;
+              const hourWindGust = hour.wind?.gust != null ? Math.round(hour.wind.gust * 10) / 10 : null;
               rows[idx] = {
                 timestamp: hourKey,
                 time: formatTime(hourKey),
@@ -512,6 +548,8 @@ router.get('/hourly/:date', async (req, res) => {
                 dewPointF,
                 humidity,
                 windSpeed: hour.wind?.speed != null ? Math.round(hour.wind.speed * 10) / 10 : null,
+                windGust: hourWindGust,
+                windLull: hour.wind?.lull != null ? Math.round(hour.wind.lull * 10) / 10 : null,
                 windDirection: windDir,
                 pressureInHg
               };
@@ -548,6 +586,8 @@ router.get('/hourly/:date', async (req, res) => {
                 dewPointF: null,
                 humidity: null,
                 windSpeed: null,
+                windGust: null,
+                windLull: null,
                 windDirection: null,
                 pressureInHg
               };
@@ -729,8 +769,8 @@ router.get('/recent', async (req, res) => {
 
     let data;
     let recentMeta = null; // 3d/7d diagnostics when ?debug=1
-    if (hours > 24) {
-      // 3d/7d: use RAW observations and bucket to hourly from actual data (avoids flatlines from sparse hourly averages)
+    if (hours > 0) {
+      // All ranges: use RAW observations and bucket to hourly for consistent structure and reliable rendering
       // Limit: 7d at 1 obs/min = 10080; fetch most recent so we never truncate recent data
       const obsLimit = hours >= 168 ? 11000 : 5000;
       const rawObs = await db.getObservationsByTimestampRange(cutoffTime, nowUnix, obsLimit);
@@ -738,7 +778,7 @@ router.get('/recent', async (req, res) => {
       for (const obs of rawObs) {
         const hourKey = Math.floor(Number(obs.timestamp) / 3600) * 3600;
         if (!byHour.has(hourKey)) {
-          byHour.set(hourKey, { count: 0, temp_f: 0, temp_c: 0, humidity: 0, wind: 0, wind_gust_max: null, pressure: 0, precip: null, solar: 0, uv: 0 });
+          byHour.set(hourKey, { count: 0, temp_f: 0, temp_c: 0, humidity: 0, wind: 0, wind_gust_max: null, wind_lull_min: null, pressure: 0, precip: null, solar: 0, uv: 0 });
         }
         const b = byHour.get(hourKey);
         b.count++;
@@ -747,6 +787,7 @@ router.get('/recent', async (req, res) => {
         if (obs.humidity != null) b.humidity += obs.humidity;
         if (obs.wind_speed != null) b.wind += obs.wind_speed;
         if (obs.wind_gust != null) b.wind_gust_max = Math.max(b.wind_gust_max ?? 0, obs.wind_gust);
+        if (obs.wind_lull != null) b.wind_lull_min = b.wind_lull_min == null ? obs.wind_lull : Math.min(b.wind_lull_min, obs.wind_lull);
         if (obs.pressure_mb != null) b.pressure += obs.pressure_mb;
         if (obs.precip_today != null) b.precip = Math.max(b.precip ?? 0, obs.precip_today);
         if (obs.solar_radiation != null) b.solar += obs.solar_radiation;
@@ -763,6 +804,7 @@ router.get('/recent', async (req, res) => {
         humidity: bucket.count ? bucket.humidity / bucket.count : null,
         wind_speed: bucket.count ? bucket.wind / bucket.count : null,
         wind_gust: bucket.wind_gust_max ?? null,
+        wind_lull: bucket.wind_lull_min ?? null,
         pressure_mb: bucket.count ? bucket.pressure / bucket.count : null,
         precip_today: bucket.precip,
         solar_radiation: bucket.count ? bucket.solar / bucket.count : null,
@@ -783,7 +825,7 @@ router.get('/recent', async (req, res) => {
           for (const obs of deviceRows) {
             const hourKey = Math.floor(Number(obs.timestamp) / 3600) * 3600;
             if (!stationByHour.has(hourKey)) {
-              stationByHour.set(hourKey, { count: 0, temp_f: 0, temp_c: 0, humidity: 0, wind: 0, wind_gust_max: null, pressure: 0, precip: null, solar: 0, uv: 0 });
+              stationByHour.set(hourKey, { count: 0, temp_f: 0, temp_c: 0, humidity: 0, wind: 0, wind_gust_max: null, wind_lull_min: null, pressure: 0, precip: null, solar: 0, uv: 0 });
             }
             const b = stationByHour.get(hourKey);
             b.count++;
@@ -792,6 +834,7 @@ router.get('/recent', async (req, res) => {
             if (obs.humidity != null) b.humidity += obs.humidity;
             if (obs.wind_speed != null) b.wind += obs.wind_speed;
             if (obs.wind_gust != null) b.wind_gust_max = Math.max(b.wind_gust_max ?? 0, obs.wind_gust);
+            if (obs.wind_lull != null) b.wind_lull_min = b.wind_lull_min == null ? obs.wind_lull : Math.min(b.wind_lull_min, obs.wind_lull);
             if (obs.pressure_mb != null) b.pressure += obs.pressure_mb;
             if (obs.precip_today != null) b.precip = Math.max(b.precip ?? 0, obs.precip_today);
             if (obs.solar_radiation != null) b.solar += obs.solar_radiation;
@@ -816,7 +859,7 @@ router.get('/recent', async (req, res) => {
             data.push(toRow(bucketTs, stationBucket));
             bucketsFromStation++;
           } else {
-            data.push({ timestamp: bucketTs, temp_fahrenheit: null, temp_celsius: null, humidity: null, wind_speed: null, wind_gust: null, pressure_mb: null, precip_today: null, solar_radiation: null, uv_index: null });
+            data.push({ timestamp: bucketTs, temp_fahrenheit: null, temp_celsius: null, humidity: null, wind_speed: null, wind_gust: null, wind_lull: null, pressure_mb: null, precip_today: null, solar_radiation: null, uv_index: null });
           }
         }
       }
@@ -863,11 +906,9 @@ router.get('/recent', async (req, res) => {
           };
         }
       }
-    } else {
-      data = await db.getObservationsByTimestampRange(cutoffTime, nowUnix, 1000);
     }
 
-    // Filter to requested hours (24h only; 3d/7d already built to exact span)
+    // Filter to requested hours (24h only; 3d/7d/12h already built to exact span)
     const recentData = hours <= 24
       ? data.filter(obs => obs.timestamp >= requestedCutoff)
       : data;
@@ -929,6 +970,7 @@ router.get('/recent', async (req, res) => {
       humidity: sampled.map(d => d.humidity),
       wind: sampled.map(d => d.wind_speed),
       windGust: sampled.map(d => d.wind_gust ?? null),
+      windLull: sampled.map(d => d.wind_lull ?? null),
       precipitation: hours <= 168 ? precipitation : sampled.map(d => d.precip_today ?? 0),
       temperature: sampled.map(d => d.temp_fahrenheit),
       solar: sampled.map(d => d.solar_radiation),
@@ -946,6 +988,11 @@ router.get('/recent', async (req, res) => {
         timestamps: responseData.timestamps,
         [metric]: responseData[metric]
       };
+      // Wind metric: include gust and lull for multi-line chart
+      if (metric === 'wind') {
+        filteredData.windGust = responseData.windGust;
+        filteredData.windLull = responseData.windLull;
+      }
       // Include manual precipitation markers if applicable
       if (metric === 'precipitation' && manualInWindow.length > 0 && hours <= 168) {
         filteredData.manualEntries = manualInWindow.map(m => ({

@@ -31,24 +31,31 @@ const COMMON_CONDITIONS = [
   'Thunderstorm'
 ];
 
-const ConditionCorrector = ({ currentCondition, temperature, timestamp, currentPrecipPct, onCorrect, onCancel, isCorrected }) => {
+const ConditionCorrector = ({ currentCondition, temperature, timestamp, currentPrecipPct, onCorrect, onCancel, isCorrected, open: controlledOpen, onOpenChange }) => {
   const stored = getStoredCorrectorState();
-  const [isOpen, setIsOpenState] = useState(stored.open);
+  const [isOpenUncontrolled, setIsOpenUncontrolled] = useState(stored.open);
   const [selectedCondition, setSelectedCondition] = useState(stored.selection);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const isControlled = controlledOpen != null && typeof onOpenChange === 'function';
+  const isOpen = isControlled ? controlledOpen : isOpenUncontrolled;
+
   const setIsOpen = useCallback((open) => {
-    setIsOpenState(open);
-    try {
-      if (open) sessionStorage.setItem(CORRECTOR_OPEN_KEY, '1');
-      else {
-        sessionStorage.removeItem(CORRECTOR_OPEN_KEY);
-        sessionStorage.removeItem(CORRECTOR_SELECTION_KEY);
+    if (isControlled) {
+      onOpenChange(open);
+    } else {
+      setIsOpenUncontrolled(open);
+      try {
+        if (open) sessionStorage.setItem(CORRECTOR_OPEN_KEY, '1');
+        else {
+          sessionStorage.removeItem(CORRECTOR_OPEN_KEY);
+          sessionStorage.removeItem(CORRECTOR_SELECTION_KEY);
+        }
+      } catch {
+        // ignore
       }
-    } catch {
-      // ignore
     }
-  }, []);
+  }, [isControlled, onOpenChange]);
 
   useEffect(() => {
     if (isOpen && selectedCondition) {
@@ -88,19 +95,21 @@ const ConditionCorrector = ({ currentCondition, temperature, timestamp, currentP
 
   return (
     <>
-      {isCorrected && (
+      {!isControlled && isCorrected && (
         <span className="corrected-label">Corrected</span>
       )}
-      <div className="condition-corrector-wrapper">
-        <button
-          className="condition-btn condition-edit-btn"
-          onClick={(e) => { e.stopPropagation(); setIsOpen(true); }}
-          title="Edit condition"
-          aria-label="Edit condition"
-        >
-          <EditIcon className="condition-edit-icon" aria-hidden />
-        </button>
-      </div>
+      {!isControlled && (
+        <div className="condition-corrector-wrapper">
+          <button
+            className="condition-btn condition-edit-btn"
+            onClick={(e) => { e.stopPropagation(); setIsOpen(true); }}
+            title="Edit condition"
+            aria-label="Edit condition"
+          >
+            <EditIcon className="condition-edit-icon" aria-hidden />
+          </button>
+        </div>
+      )}
       {isOpen && (
       <Modal
         isOpen

@@ -189,6 +189,7 @@ const MetricDetailView = ({ current, forecast, metricOverride, connectionStatus 
   const [hoveredPoint, setHoveredPoint] = useState(null);
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
 
+
   // Precipitation: one modal, sub-views chart | add | history
   const [precipView, setPrecipView] = useState(() => navState?.view || 'chart');
   const [precipType, setPrecipType] = useState('');
@@ -203,6 +204,11 @@ const MetricDetailView = ({ current, forecast, metricOverride, connectionStatus 
 
   const safeMetric = metric || '';
   const { data, loading, error, refetch } = useHistoricalData(safeMetric, hours);
+
+  // Clear stale tooltip when switching metrics (fixes wind chart showing pressure value)
+  useEffect(() => {
+    setHoveredPoint(null);
+  }, [safeMetric]);
   const scrollPositionRef = useRef(0);
 
   // External (towerhill.app): only show chart for precipitation; hide Graph/Edit/History tabs and add/history content
@@ -450,6 +456,15 @@ const MetricDetailView = ({ current, forecast, metricOverride, connectionStatus 
 
   // Primary display: pressure always in inHg (e.g. 29.95); other metrics as-is
   const currentValueNumber = useMemo(() => {
+    if (safeMetric === 'precipitation') {
+      const manual = current?.precipitation?.manual;
+      const manualAmt = manual?.amountInches != null ? Number(manual.amountInches) : null;
+      if (manualAmt != null && Number.isFinite(manualAmt)) return parseFloat(manualAmt.toFixed(2));
+      const today = current?.precipitation?.today;
+      if (today != null && Number.isFinite(Number(today))) return parseFloat(Number(today).toFixed(2));
+      if (currentValue === null || currentValue === undefined) return null;
+      return parseFloat(Number(currentValue).toFixed(2));
+    }
     if (safeMetric === 'pressure') {
       const inHg = current?.pressure?.inHg;
       if (inHg != null) return parseFloat(Number(inHg).toFixed(2));
@@ -462,7 +477,7 @@ const MetricDetailView = ({ current, forecast, metricOverride, connectionStatus 
     return safeMetric === 'temperature' || safeMetric === 'humidity' || safeMetric === 'wind' || safeMetric === 'solar' || safeMetric === 'uv'
       ? Math.round(currentValue)
       : parseFloat(currentValue.toFixed(2));
-  }, [currentValue, safeMetric, current?.pressure?.inHg, data?.data]);
+  }, [currentValue, safeMetric, current?.pressure?.inHg, current?.precipitation?.manual, current?.precipitation?.today, data?.data]);
 
   const secondaryText = useMemo(() => getSecondaryText(), [getSecondaryText]);
   const chartSeries = useMemo(() => {
@@ -475,7 +490,16 @@ const MetricDetailView = ({ current, forecast, metricOverride, connectionStatus 
 
   const yAxisScale = useMemo(() => {
     if (!chartSeries.length) return null;
-    const numericValues = chartSeries.map((d) => Number(d.value));
+    let numericValues = chartSeries.map((d) => Number(d.value));
+    if (chartMetricToShow === 'wind') {
+      const all = [];
+      chartSeries.forEach((d) => {
+        if (d.value != null) all.push(Number(d.value));
+        if (d.valueGust != null) all.push(Number(d.valueGust));
+        if (d.valueLull != null) all.push(Number(d.valueLull));
+      });
+      if (all.length) numericValues = all;
+    }
     return buildNiceYAxisScale(chartMetricToShow, numericValues, pressureUnit);
   }, [chartSeries, chartMetricToShow, pressureUnit]);
 
@@ -597,28 +621,11 @@ const MetricDetailView = ({ current, forecast, metricOverride, connectionStatus 
               aria-label={safeMetric === 'precipitation' ? 'Precipitation' : `${config.label} chart showing ${hours <= 24 ? '24 hour' : hours <= 72 ? '3 day' : '7 day'} historical data`}
             >
               <div className="metric-detail-chart-controls">
-                {(safeMetric !== 'precipitation' || effectivePrecipView === 'chart') && isMobile && (
+                {(safeMetric !== 'precipitation' || effectivePrecipView === 'chart') && isMobile && !hoveredPoint && (
                   <div className="metric-detail-chart-hover-badge metric-detail-chart-hover-badge--controls" aria-live="polite">
-                    {hoveredPoint ? (
-                      <div className="metric-detail-chart-hover-badge__value">
-                        <span className="chart-hover-time">{hoveredPoint.formattedTime}</span>
-                        <span className="chart-hover-value">
-                          {hoveredPoint.formattedValueNumber}
-                          {hoveredPoint.formattedValueUnit && (
-                            <span className="chart-hover-value-unit">{hoveredPoint.formattedValueUnit}</span>
-                          )}
-                        </span>
-                        {hoveredPoint.manualEntry && (
-                          <span className="chart-hover-manual">
-                            Manual: {hoveredPoint.manualEntry.amountInches.toFixed(2)} in ({hoveredPoint.manualEntry.type})
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="metric-detail-chart-hover-badge__placeholder">
-                        Tap chart for hourly details
-                      </span>
-                    )}
+                    <span className="metric-detail-chart-hover-badge__placeholder">
+                      Tap chart for hourly details
+                    </span>
                   </div>
                 )}
                 {safeMetric === 'precipitation' && isLocal && (
@@ -880,6 +887,38 @@ const MetricDetailView = ({ current, forecast, metricOverride, connectionStatus 
                 )}
                 <div className="metric-detail-chart-scroll">
                   <div className="metric-detail-chart-scroll-inner">
+                    {!isMobile && hoveredPoint && (
+                      <div className="metric-detail-chart-hover-overlay" aria-live="polite">
+                        <div className="metric-detail-chart-hover-badge__value">
+                          <span className="chart-hover-time">{hoveredPoint.formattedTime}</span>
+                          <span className="chart-hover-value">{hoveredPoint.formattedValue}</span>
+                          {hoveredPoint.manualEntry && (
+                            <span className="chart-hover-manual">
+                              Manual: {hoveredPoint.manualEntry.amountInches.toFixed(2)} in ({hoveredPoint.manualEntry.type})
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {isMobile && hoveredPoint && (
+                      <div
+                        className="metric-detail-chart-tap-badge"
+                        style={{ left: `${((hoveredPoint.tapXPercent ?? 0.5) * 100).toFixed(1)}%` }}
+                        aria-live="polite"
+                      >
+                        <div className="metric-detail-chart-hover-badge__value">
+                          <span className="chart-hover-time">{hoveredPoint.formattedTime}</span>
+                          <span className="chart-hover-value">
+                            {hoveredPoint.formattedValue}
+                          </span>
+                          {hoveredPoint.manualEntry && (
+                            <span className="chart-hover-manual">
+                              Manual: {hoveredPoint.manualEntry.amountInches.toFixed(2)} in ({hoveredPoint.manualEntry.type})
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
                     <MetricChart
                       data={chartSeries}
                       metric={chartMetricToShow}
@@ -892,6 +931,7 @@ const MetricDetailView = ({ current, forecast, metricOverride, connectionStatus 
                       hideYAxis={isMobile}
                       customYAxisTicks={yAxisScale?.ticks}
                       customYAxisDomain={yAxisScale?.domain}
+                      activePoint={isMobile ? hoveredPoint : undefined}
                     />
                   </div>
                 </div>
@@ -949,12 +989,7 @@ const MetricDetailView = ({ current, forecast, metricOverride, connectionStatus 
                   {hoveredPoint ? (
                     <div className="metric-detail-chart-hover-badge__value">
                       <span className="chart-hover-time">{hoveredPoint.formattedTime}</span>
-                      <span className="chart-hover-value">
-                        {hoveredPoint.formattedValueNumber}
-                        {hoveredPoint.formattedValueUnit && (
-                          <span className="chart-hover-value-unit">{hoveredPoint.formattedValueUnit}</span>
-                        )}
-                      </span>
+                      <span className="chart-hover-value">{hoveredPoint.formattedValue}</span>
                       {hoveredPoint.manualEntry && (
                         <span className="chart-hover-manual">
                           Manual: {hoveredPoint.manualEntry.amountInches.toFixed(2)} in ({hoveredPoint.manualEntry.type})

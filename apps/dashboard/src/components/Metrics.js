@@ -2,7 +2,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import MetricIcon from './MetricIcon';
 import Sparkline from './Sparkline';
-import PrecipitationLogger from './PrecipitationLogger';
 import './Metrics.css';
 
 /** Parse SQLite datetime (UTC) to local time for display */
@@ -13,7 +12,7 @@ const parseSqliteUtc = (val) => {
   return new Date(s + 'Z');
 };
 
-const Metrics = ({ current, forecast, recent, onMetricClick, onPrecipAddClick, isLocal, onRefresh }) => {
+const Metrics = ({ current, forecast, recent, onMetricClick, isLocal, onRefresh }) => {
   const navigate = useNavigate();
   
   if (!current) return null;
@@ -181,7 +180,15 @@ const Metrics = ({ current, forecast, recent, onMetricClick, onPrecipAddClick, i
       label: 'Wind',
       value: Math.round(current.wind.speed),
       unit: 'mph',
-      secondary: `Gusts ${Math.round(current.wind.gust)} mph ${current.wind.directionText}`,
+      secondary: (() => {
+        const w = current.wind;
+        if (!w) return '';
+        const dir = w.directionText || '';
+        if (w.lull != null && w.gust != null && w.speed != null) {
+          return `${Math.round(w.lull)}–${Math.round(w.gust)} mph ${dir}`.trim();
+        }
+        return `Gusts ${Math.round(w.gust)} mph ${dir}`.trim();
+      })(),
       link: '/conditions/wind'
     },
     {
@@ -267,9 +274,6 @@ const Metrics = ({ current, forecast, recent, onMetricClick, onPrecipAddClick, i
                 </div>
               )}
             </div>
-            {metric.type === 'precipitation' && isLocal && onPrecipAddClick && (
-              <PrecipitationLogger onAddClick={onPrecipAddClick} />
-            )}
           </div>
           );
         })}

@@ -68,28 +68,67 @@ const useHistoricalData = (metric, hours = 24) => {
 
       if (response.data.success) {
         const responseData = response.data.data;
-        
+        const manualEntries = Array.isArray(responseData.manualEntries) ? responseData.manualEntries : [];
+
         // Transform data into chart-friendly format
-        const chartData = responseData.timestamps.map((timestamp, index) => {
+        const timestamps = Array.isArray(responseData.timestamps) ? responseData.timestamps : [];
+
+        // For precipitation manual entries, timestamps won't always align exactly with observation buckets.
+        // Attach each manual entry to the nearest bucket within a reasonable window so the detail modal reflects new data.
+        const manualByNearestTimestamp = (() => {
+          if (metricParam !== 'precipitation' || !manualEntries.length || !timestamps.length) return null;
+          const map = new Map();
+          const maxDeltaSec = hoursParam <= 24 ? 30 * 60 : 2 * 60 * 60; // 30m for 24h charts; looser for multi-day
+          for (const entry of manualEntries) {
+            const ts = Number(entry?.timestamp);
+            if (!Number.isFinite(ts)) continue;
+            let best = null;
+            let bestDelta = Infinity;
+            for (let i = 0; i < timestamps.length; i++) {
+              const t = Number(timestamps[i]);
+              const d = Math.abs(t - ts);
+              if (d < bestDelta) {
+                bestDelta = d;
+                best = t;
+              }
+              if (bestDelta === 0) break;
+            }
+            if (best != null && bestDelta <= maxDeltaSec) {
+              map.set(best, entry);
+            }
+          }
+          return map;
+        })();
+
+        const chartData = timestamps.map((timestamp, index) => {
+          const rawValue = responseData[metricParam]?.[index];
           const dataPoint = {
             timestamp,
             time: new Date(timestamp * 1000),
-            value: responseData[metricParam]?.[index] ?? null
+            value: rawValue ?? (metricParam === 'precipitation' ? 0 : null)
           };
 
+          // Wind: include gust and lull for multi-line chart
+          if (metricParam === 'wind') {
+            dataPoint.valueGust = responseData.windGust?.[index] ?? null;
+            dataPoint.valueLull = responseData.windLull?.[index] ?? null;
+          }
+
           // Add manual precipitation entries if available
-          if (metricParam === 'precipitation' && responseData.manualEntries) {
-            const manualEntry = responseData.manualEntries.find(
-              entry => entry.timestamp === timestamp
-            );
-            if (manualEntry) {
-              dataPoint.manualEntry = manualEntry;
-            }
+          if (metricParam === 'precipitation' && manualByNearestTimestamp) {
+            const manualEntry = manualByNearestTimestamp.get(timestamp);
+            if (manualEntry) dataPoint.manualEntry = manualEntry;
           }
 
           return dataPoint;
         }).filter(d => {
           if (hoursParam > 24) {
+            return true;
+          }
+          if (metricParam === 'wind') {
+            return d.value !== null || d.valueGust !== null || d.valueLull !== null;
+          }
+          if (metricParam === 'precipitation') {
             return true;
           }
           return d.value !== null && d.value !== undefined;
@@ -99,7 +138,7 @@ const useHistoricalData = (metric, hours = 24) => {
           data: chartData,
           count: response.data.count,
           hours: response.data.hours,
-          manualEntries: responseData.manualEntries || []
+          manualEntries
         };
 
         // Cache the result

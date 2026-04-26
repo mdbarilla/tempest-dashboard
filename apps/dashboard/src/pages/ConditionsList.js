@@ -4,8 +4,7 @@ import axios from 'axios';
 import MetricIcon from '../components/MetricIcon';
 import WeatherIcon from '../components/WeatherIcon';
 import Sparkline from '../components/Sparkline';
-import PrecipitationLogger from '../components/PrecipitationLogger';
-import ViewToggle from '../components/ViewToggle';
+import SharedHeaderRow from '../components/SharedHeaderRow';
 import AtmosphereFeedbackModal from '../components/AtmosphereFeedbackModal';
 import {
   buildConditionsMetrics,
@@ -174,25 +173,13 @@ const ConditionsList = ({
     <div className="conditions-list-page">
       <header className="conditions-list-header">
         <div className="conditions-list-location">
-          <h1 className="conditions-list-title">Tower Hill&nbsp;&nbsp;<span className="conditions-list-city">Wayland</span></h1>
+          <h1 className="conditions-list-title">
+            <span className="th-brand-name">Tower Hill</span>
+            &nbsp;&nbsp;
+            <span className="conditions-list-city">Wayland</span>
+          </h1>
           <div className="conditions-list-header-row">
-            {lastUpdate && (
-              <>
-                <span className="page-and-update-mobile">
-                  Currently • Updated {lastUpdate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
-                </span>
-                <span className="conditions-list-nav-desktop">
-                  <p className="conditions-list-updated">
-                    Updated {lastUpdate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
-                  </p>
-                  <ViewToggle />
-                  <span className="view-toggle-bullet" aria-hidden="true">•</span>
-                  <Link to="/history" className="view-toggle-label history-link">History</Link>
-                  <span className="view-toggle-bullet" aria-hidden="true">•</span>
-                  <Link to="/chat" className="view-toggle-label history-link">Ask</Link>
-                </span>
-              </>
-            )}
+            {lastUpdate && <SharedHeaderRow />}
           </div>
         </div>
       </header>
@@ -250,13 +237,6 @@ const ConditionsList = ({
                   </div>
                 ) : (
                   <>
-                    {m.type === 'precipitation' && isLocal && (
-                      <span className="conditions-list-precip-edit" onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
-                        <PrecipitationLogger
-                          onAddClick={() => navigate('/conditions/precipitation', { state: { from: 'list', view: 'add' } })}
-                        />
-                      </span>
-                    )}
                     <div className="conditions-list-value-block">
                       <div className="conditions-list-value">
                         {m.value}

@@ -1,4 +1,4 @@
-/* GardenFrame — full-screen iframe that overlays dashboard content */
+/* GardenFrame — full-screen iframe; nav chrome stays weather app (garden-themed via body.route-garden). */
 
 .garden-frame-wrap {
   position: fixed;
@@ -7,139 +7,26 @@
   right: 0;
   /* Sit flush above the bottom nav on mobile */
   bottom: var(--bottom-nav-height);
-  z-index: 999; /* below nav (1000), above everything else */
+  z-index: 999;
   background: var(--bg-primary);
   display: flex;
   flex-direction: column;
 }
 
-/* No nav on desktop — fill full screen */
 @media (min-width: 768px) {
   .garden-frame-wrap {
     bottom: 0;
   }
 }
 
-/* Garden modal open: expand to full screen so nav hides cleanly */
 body.garden-modal-open .garden-frame-wrap {
   bottom: 0;
 }
 
-/* Header — matches ConditionsList/Dashboard layout */
-.garden-frame-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: var(--padding-mobile) var(--padding-mobile) 1rem;
-  flex-shrink: 0;
-  background: var(--bg-primary);
-  position: relative;
-  z-index: 1;
-}
-
-.garden-frame-header::after {
-  content: '';
-  position: absolute;
-  left: var(--padding-mobile);
-  right: var(--padding-mobile);
-  bottom: 0;
-  height: 1px;
-  background: var(--border-light);
-}
-
-@media (min-width: 768px) and (orientation: portrait) {
-  .garden-frame-header {
-    padding: var(--padding-tablet) var(--padding-tablet) 1rem;
-  }
-  .garden-frame-header::after {
-    left: var(--padding-tablet);
-    right: var(--padding-tablet);
-  }
-}
-
-@media (min-width: 1024px) {
-  .garden-frame-header {
-    padding: var(--padding-desktop) var(--padding-desktop) 1rem;
-  }
-  .garden-frame-header::after {
-    left: var(--padding-desktop);
-    right: var(--padding-desktop);
-  }
-}
-
-.garden-frame-location {
-  flex: 1;
-  min-width: 0;
-}
-
-.garden-frame-header-row {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-}
-
-.garden-frame-title {
-  font-family: var(--font-display);
-  font-size: 1.75rem;
-  font-weight: var(--weight-medium);
-  letter-spacing: -0.02em;
-  color: var(--text-primary);
-  margin: 0 0 0.5rem 0;
-  line-height: 1.2;
-  text-align: left;
-}
-
-.garden-frame-city {
-  font-weight: var(--weight-regular);
-  color: var(--text-secondary);
-  font-size: 1.5rem;
-}
-
-.garden-frame,
-.garden-frame-dev {
+.garden-frame {
   flex: 1;
   min-height: 0;
-}
-
-.garden-frame {
   width: 100%;
   border: none;
   display: block;
-}
-
-/* Dev-only placeholder shown when garden SPA isn't running locally */
-.garden-frame-dev {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 2rem;
-  background: var(--bg-primary);
-}
-
-.garden-frame-dev-label {
-  font-size: 1.125rem;
-  font-weight: var(--weight-semibold);
-  color: var(--text-primary);
-}
-
-.garden-frame-dev-note {
-  font-size: var(--font-size-secondary);
-  color: var(--text-secondary);
-  text-align: center;
-  line-height: 1.5;
-}
-
-.garden-frame-dev-note a {
-  color: var(--accent-blue);
-  text-decoration: none;
-}
-
-.garden-frame-dev-note a:hover {
-  text-decoration: underline;
 }

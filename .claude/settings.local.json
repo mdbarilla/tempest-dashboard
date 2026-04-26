@@ -48,7 +48,10 @@
       "Bash(npm version:*)",
       "Bash(timeout 300 bash -c 'while ssh mbarilla@192.168.1.160 \"\"pgrep -f \\\\\"\"npm rebuild\\\\\"\" > /dev/null\"\"; do echo \"\"Still building...\"\"; sleep 10; done; echo \"\"Build completed!\"\"')",
       "Bash(pm2 logs:*)",
-      "mcp__Control_Chrome__list_tabs"
+      "mcp__Control_Chrome__list_tabs",
+      "Bash(networksetup -listallhardwareports)",
+      "Bash(nmap -sn 192.168.86.0/24)",
+      "Bash(arp -a)"
     ]
   }
 }

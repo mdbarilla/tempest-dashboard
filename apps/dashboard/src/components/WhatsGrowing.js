@@ -1,114 +1,133 @@
 /**
- * What's Growing — garden thumbnails section.
- * Only renders when ?garden=1 is in the URL.
+ * Now Growing — horizontal seed thumbnail carousel.
+ * Renders when Garden is enabled (local network default, or ?garden=1 / prior enable).
  * Links to /garden (separate garden app).
  */
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import axios from 'axios';
+import { shouldShowGardenNav } from '../utils/gardenNav';
+import './WhatsGrowing.css';
 
 const GARDEN_API = '/api/garden';
 
-export default function WhatsGrowing() {
+/** Split "Celery – Tall Utah 52-70R" into { primary: "Celery", secondary: "Tall Utah 52-70R" } */
+function parseName(varietyName) {
+  const match = varietyName.match(/^(.+?)\s+[–—-]\s+(.+)$/);
+  if (match) return { primary: match[1].trim(), secondary: match[2].trim() };
+  return { primary: varietyName, secondary: null };
+}
+
+export default function WhatsGrowing({ variant = 'standalone' } = {}) {
   const location = useLocation();
   const [seeds, setSeeds] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
 
-  const showGarden = new URLSearchParams(location.search).get('garden') === '1';
+  const showGarden = shouldShowGardenNav(location.pathname, location.search);
 
   useEffect(() => {
     if (!showGarden) return;
     setLoading(true);
+    setFetchError(false);
     axios
-      .get(`${GARDEN_API}/whats-growing?limit=12`)
+      .get(`${GARDEN_API}/whats-growing?limit=20&_=${Date.now()}`, {
+        headers: { 'Cache-Control': 'no-cache' },
+      })
       .then((r) => setSeeds(r.data?.data || []))
-      .catch(() => setSeeds([]))
+      .catch(() => {
+        setSeeds([]);
+        setFetchError(true);
+      })
       .finally(() => setLoading(false));
   }, [showGarden]);
 
-  if (!showGarden || loading) return null;
+  if (!showGarden) return null;
+
+  if (variant === 'dashboard' && loading) {
+    return (
+      <div className="garden-now-growing garden-now-growing--state">
+        <div className="now-growing-header now-growing-header--dashboard">
+          <div className="now-growing-header-left">
+            <h3 className="now-growing-title">Now Growing</h3>
+          </div>
+        </div>
+        <p className="now-growing-state-msg" aria-live="polite">
+          Loading greenhouse…
+        </p>
+      </div>
+    );
+  }
+
+  if (variant === 'dashboard' && !loading && seeds.length === 0) {
+    return (
+      <div className="garden-now-growing garden-now-growing--state">
+        <div className="now-growing-header now-growing-header--dashboard">
+          <div className="now-growing-header-left">
+            <h3 className="now-growing-title">Now Growing</h3>
+          </div>
+        </div>
+        <p className="now-growing-state-msg">
+          {fetchError
+            ? 'Could not reach the greenhouse. Check that the backend is running.'
+            : 'No active seedlings to show. Open the garden app to add or start seeds.'}
+        </p>
+      </div>
+    );
+  }
+
+  if (loading) return null;
   if (seeds.length === 0) return null;
 
-  const gardenHref = `${window.location.origin}/garden`;
-
-  return (
-    <section className="whats-growing" style={styles.section}>
-      <div style={styles.header}>
-        <h3 style={styles.title}>What&apos;s growing</h3>
-        <a href={gardenHref} style={styles.link}>
-          View garden →
-        </a>
+  const body = (
+    <>
+      <div className={`now-growing-header${variant === 'dashboard' ? ' now-growing-header--dashboard' : ''}`}>
+        <div className="now-growing-header-left">
+          <h3 className="now-growing-title">Now Growing</h3>
+          {variant !== 'dashboard' && (
+            <span className="now-growing-subhed">In the greenhouse</span>
+          )}
+        </div>
+        {variant !== 'dashboard' && (
+          <Link to="/garden" className="now-growing-link">
+            View garden →
+          </Link>
+        )}
       </div>
-      <div style={styles.grid}>
-        {seeds.slice(0, 12).map((seed) => {
+      <div className="now-growing-carousel">
+        {seeds.map((seed) => {
           const imgSrc = seed.image_path
             ? `/api/garden/images/${seed.image_path}`
             : null;
+          const { primary, secondary } = parseName(seed.variety_name);
           return (
-            <a
+            <Link
               key={seed.id}
-              href={`${gardenHref}/seed/${seed.id}`}
-              style={styles.thumb}
+              to={`/garden/seed/${seed.id}`}
+              className="now-growing-card"
               title={seed.variety_name}
             >
-              {imgSrc ? (
-                <img src={imgSrc} alt={seed.variety_name} style={styles.img} />
-              ) : (
-                <div style={styles.placeholder}>🌱</div>
-              )}
-            </a>
+              <div className="now-growing-thumb">
+                {imgSrc ? (
+                  <img src={imgSrc} alt={seed.variety_name} className="now-growing-img" />
+                ) : (
+                  <div className="now-growing-placeholder">🌱</div>
+                )}
+              </div>
+              <div className="now-growing-body">
+                <span className="now-growing-primary">{primary}</span>
+                {secondary && <span className="now-growing-secondary">{secondary}</span>}
+              </div>
+            </Link>
           );
         })}
       </div>
-    </section>
+    </>
   );
-}
 
-const styles = {
-  section: {
-    marginTop: 'var(--section-gap, 2rem)',
-    paddingTop: 'var(--space-5, 1.5rem)',
-    borderTop: '1px solid var(--border-light, rgba(0,0,0,0.1))'
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 'var(--space-3, 0.75rem)'
-  },
-  title: {
-    fontSize: 'var(--font-size-base, 1rem)',
-    fontWeight: 'var(--weight-semibold, 600)',
-    color: 'var(--text-primary)'
-  },
-  link: {
-    fontSize: 'var(--font-size-secondary, 0.875rem)',
-    color: 'var(--accent-blue)',
-    textDecoration: 'none'
-  },
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(64px, 1fr))',
-    gap: 'var(--space-2, 0.5rem)'
-  },
-  thumb: {
-    aspectRatio: '1',
-    borderRadius: 'var(--radius-sm, 0.25rem)',
-    overflow: 'hidden',
-    background: 'var(--bg-secondary)',
-    display: 'block'
-  },
-  img: {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover'
-  },
-  placeholder: {
-    width: '100%',
-    height: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '1.5rem'
+  if (variant === 'dashboard') {
+    return <div className="garden-now-growing">{body}</div>;
   }
-};
+
+  return <section className="now-growing-section">{body}</section>;
+}

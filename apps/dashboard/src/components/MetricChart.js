@@ -7,17 +7,20 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  ReferenceLine
+  ReferenceLine,
+  ReferenceDot,
+  Legend,
+  Label
 } from 'recharts';
 import { formatTime, getMetricConfig, formatTooltipValue, formatTooltipValueParts } from '../utils/chartHelpers';
 import './MetricChart.css';
 
-const PLOT_LEFT = 50;
-const PLOT_RIGHT = 24;
+const PLOT_LEFT = 72;
+const PLOT_RIGHT = 36;
 const MOBILE_PLOT_LEFT = 8;
 const MOBILE_PLOT_RIGHT = 0;
 
-const MetricChart = React.memo(({ data, metric, hours, manualEntries = [], pressureUnit, onHoverChange, useClickTooltip, stableTimeEnd, hideYAxis = false, customYAxisTicks, customYAxisDomain }) => {
+const MetricChart = React.memo(({ data, metric, hours, manualEntries = [], pressureUnit, onHoverChange, useClickTooltip, stableTimeEnd, hideYAxis = false, customYAxisTicks, customYAxisDomain, activePoint }) => {
   const config = useMemo(
     () => getMetricConfig(metric, metric === 'pressure' ? { pressureUnit: pressureUnit || 'inHg' } : {}),
     [metric, pressureUnit]
@@ -47,14 +50,23 @@ const MetricChart = React.memo(({ data, metric, hours, manualEntries = [], press
       const parts = formatTooltipValueParts(value, metric, tooltipOptions);
       const formattedValueNumber = parts.value;
       const formattedValueUnit = parts.unit;
+      let formattedValue = formatTooltipValue(value, metric, tooltipOptions);
+      if (metric === 'wind') {
+        const extras = [];
+        if (dataPoint.valueLull != null) extras.push(`Lull ${Math.round(dataPoint.valueLull)} mph`);
+        if (dataPoint.valueGust != null) extras.push(`Gust ${Math.round(dataPoint.valueGust)} mph`);
+        formattedValue = extras.length ? `${formattedValue} · ${extras.join(' · ')}` : formattedValue;
+      }
       onHoverChange({
         timestamp: dataPoint.timestamp,
         value: value,
         formattedTime: dataPoint.formattedTime,
-        formattedValue: formatTooltipValue(value, metric, tooltipOptions),
+        formattedValue,
         formattedValueNumber,
         formattedValueUnit,
-        manualEntry
+        manualEntry,
+        windGust: dataPoint.valueGust,
+        windLull: dataPoint.valueLull
       });
     }, [active, payload]);
     return null;
@@ -82,14 +94,25 @@ const MetricChart = React.memo(({ data, metric, hours, manualEntries = [], press
     const parts = formatTooltipValueParts(value, metric, tooltipOptions);
     const formattedValueNumber = parts.value;
     const formattedValueUnit = parts.unit;
+    let formattedValue = formatTooltipValue(value, metric, tooltipOptions);
+    if (metric === 'wind') {
+      const extras = [];
+      if (dataPoint.valueLull != null) extras.push(`Lull ${Math.round(dataPoint.valueLull)} mph`);
+      if (dataPoint.valueGust != null) extras.push(`Gust ${Math.round(dataPoint.valueGust)} mph`);
+      formattedValue = extras.length ? `${formattedValue} · ${extras.join(' · ')}` : formattedValue;
+    }
+    const tapXPercent = plotWidth > 0 ? relativeX / plotWidth : 0;
     onHoverChange({
       timestamp: dataPoint.timestamp,
       value: value,
       formattedTime: dataPoint.formattedTime,
-      formattedValue: formatTooltipValue(value, metric, tooltipOptions),
+      formattedValue,
       formattedValueNumber,
       formattedValueUnit,
-      manualEntry
+      manualEntry,
+      windGust: dataPoint.valueGust,
+      windLull: dataPoint.valueLull,
+      tapXPercent
     });
   }, [useClickTooltip, onHoverChange, chartData, metric, pressureUnit, plotLeft, plotRight]);
 
@@ -123,14 +146,51 @@ const MetricChart = React.memo(({ data, metric, hours, manualEntries = [], press
     );
   };
 
-  // Stable x-axis: when stableTimeEnd is provided, use a fixed time range so labels don't redraw between metric switches
+  const formatYTick = (value) => {
+    if (value == null) return '';
+    if (metric === 'pressure' && config.unit === 'inHg') return value.toFixed(2);
+    if (metric === 'precipitation') return value.toFixed(2);
+    return String(Math.round(value));
+  };
+
+  const CustomYAxisTick = ({ x, y, payload }) => {
+    if (payload?.value == null) return null;
+    return (
+      <g transform={`translate(${x},${y})`}>
+        <text x={0} y={0} dy={0} textAnchor="end" dominantBaseline="middle" fill="var(--text-secondary)" fontSize={12}>
+          {formatYTick(payload.value)}
+        </text>
+      </g>
+    );
+  };
+
+  const CustomYAxisTickRight = ({ x, y, payload }) => {
+    if (payload?.value == null) return null;
+    return (
+      <g transform={`translate(${x},${y})`}>
+        <text x={0} y={0} dy={0} textAnchor="start" dominantBaseline="middle" fill="var(--text-secondary)" fontSize={12}>
+          {formatYTick(payload.value)}
+        </text>
+      </g>
+    );
+  };
+
+  // Stable x-axis: when stableTimeEnd is provided, use a fixed time range so labels don't redraw between metric switches.
+  // For 24h, ensure domain includes all data: use data extent so points are never clipped off-screen.
   const xDomain = useMemo(() => {
-    if (stableTimeEnd != null && typeof stableTimeEnd === 'number') {
+    if (!chartData?.length) return undefined;
+    const dataMin = Math.min(...chartData.map(d => d.timestamp));
+    const dataMax = Math.max(...chartData.map(d => d.timestamp));
+    if (stableTimeEnd != null && typeof stableTimeEnd === 'number' && hours > 24) {
       const start = stableTimeEnd - hours * 3600;
       return [start, stableTimeEnd];
     }
-    return undefined;
-  }, [stableTimeEnd, hours]);
+    // 24h: use data extent so chart always shows all points (fixes data rendering off-screen)
+    // Wind: use smaller padding so chart renders more fully in view
+    const padFactor = metric === 'wind' ? 0.01 : 0.02;
+    const pad = Math.max(3600, (dataMax - dataMin) * padFactor);
+    return [dataMin - pad, dataMax + pad];
+  }, [stableTimeEnd, hours, chartData, metric]);
 
   const xTicks = useMemo(() => {
     if (xDomain) {
@@ -166,7 +226,7 @@ const MetricChart = React.memo(({ data, metric, hours, manualEntries = [], press
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={chartData}
-          margin={{ top: 20, right: hideYAxis ? 0 : 24, left: hideYAxis ? 2 : 10, bottom: 40 }}
+          margin={{ top: 24, right: hideYAxis ? 0 : 36, left: hideYAxis ? 2 : 72, bottom: 44 }}
           accessibilityLayer={!useClickTooltip}
         >
           <CartesianGrid
@@ -174,12 +234,15 @@ const MetricChart = React.memo(({ data, metric, hours, manualEntries = [], press
             stroke="var(--border-light)"
             vertical
             horizontal
+            syncWithTicks
+            verticalValues={xTicks}
           />
           <XAxis
             dataKey="timestamp"
             type="number"
             domain={xDomain || ['dataMin', 'dataMax']}
             ticks={xTicks}
+            interval="preserveStartEnd"
             stroke="var(--border-light)"
             tickLine={false}
             axisLine={false}
@@ -189,19 +252,54 @@ const MetricChart = React.memo(({ data, metric, hours, manualEntries = [], press
           />
           <YAxis
             hide={hideYAxis}
+            orientation="left"
             stroke="var(--border-light)"
             fontSize={12}
             tickLine={false}
             axisLine={false}
             domain={customYAxisDomain || config.domain}
             ticks={customYAxisTicks}
-            tick={{ fill: 'var(--text-secondary)', fontSize: 12 }}
-            label={hideYAxis ? undefined : {
-              value: config.yAxisLabel,
-              angle: -90,
-              position: 'insideLeft',
-              style: { textAnchor: 'middle', fill: 'var(--text-secondary)', fontSize: 12 }
-            }}
+            interval={0}
+            tick={<CustomYAxisTick />}
+            width={72}
+          >
+            {!hideYAxis && (
+              <Label
+                value={config.yAxisLabel}
+                content={(props) => {
+                  const { viewBox, value } = props;
+                  if (!value || !viewBox) return null;
+                  const x = viewBox.x ?? 0;
+                  const y = (viewBox.y ?? 0) + (viewBox.height ?? 0) - 4;
+                  return (
+                    <text
+                      x={x}
+                      y={y}
+                      textAnchor="start"
+                      fill="var(--text-secondary)"
+                      fontSize={13}
+                      style={{ fontFamily: 'var(--font-primary)', opacity: 0.6 }}
+                    >
+                      {value}
+                    </text>
+                  );
+                }}
+              />
+            )}
+          </YAxis>
+          <YAxis
+            hide={hideYAxis}
+            orientation="right"
+            stroke="var(--border-light)"
+            fontSize={12}
+            tickLine={false}
+            axisLine={false}
+            domain={customYAxisDomain || config.domain}
+            ticks={customYAxisTicks}
+            interval={0}
+            tick={<CustomYAxisTickRight />}
+            width={36}
+            mirror
           />
           {!useClickTooltip && (
             <Tooltip 
@@ -217,6 +315,7 @@ const MetricChart = React.memo(({ data, metric, hours, manualEntries = [], press
           <Line
             type="monotone"
             dataKey="value"
+            name={metric === 'wind' ? 'Speed' : undefined}
             stroke="var(--trendline-stroke)"
             strokeWidth={2}
             dot={false}
@@ -226,6 +325,54 @@ const MetricChart = React.memo(({ data, metric, hours, manualEntries = [], press
             animationDuration={350}
             animationEasing="ease-out"
           />
+          {/* Wind: gust line (solid, accent color) */}
+          {metric === 'wind' && (
+            <Line
+              type="monotone"
+              dataKey="valueGust"
+              stroke="var(--accent)"
+              strokeWidth={2}
+              strokeOpacity={0.85}
+              dot={false}
+              activeDot={{ r: 3, fill: 'var(--accent)' }}
+              isAnimationActive={true}
+              connectNulls={false}
+              animationDuration={350}
+              animationEasing="ease-out"
+              name="Gust"
+            />
+          )}
+          {/* Wind: lull line (solid, muted) - 0 is valid, only null/undefined skip */}
+          {metric === 'wind' && (
+            <Line
+              type="monotone"
+              dataKey="valueLull"
+              stroke="var(--text-secondary)"
+              strokeWidth={1.5}
+              strokeOpacity={0.5}
+              dot={false}
+              activeDot={{ r: 3, fill: 'var(--text-secondary)' }}
+              isAnimationActive={true}
+              connectNulls={false}
+              animationDuration={350}
+              animationEasing="ease-out"
+              name="Lull"
+            />
+          )}
+          {metric === 'wind' && (
+            <Legend wrapperStyle={{ fontSize: 11 }} />
+          )}
+          {/* Tap indicator dot (mobile) */}
+          {activePoint && (
+            <ReferenceDot
+              x={activePoint.timestamp}
+              y={activePoint.value}
+              r={5}
+              fill="var(--trendline-stroke)"
+              stroke="var(--bg-card)"
+              strokeWidth={2}
+            />
+          )}
           {/* Freezing line (32°F) on temperature chart */}
           {metric === 'temperature' && (
             <ReferenceLine
@@ -247,7 +394,7 @@ const MetricChart = React.memo(({ data, metric, hours, manualEntries = [], press
             <ReferenceLine
               key={`manual-${entry.timestamp}-${index}`}
               x={entry.timestamp}
-              stroke="var(--accent-blue)"
+              stroke="var(--accent)"
               strokeDasharray="4 4"
               strokeWidth={2}
               strokeOpacity={0.35}
@@ -262,7 +409,7 @@ const MetricChart = React.memo(({ data, metric, hours, manualEntries = [], press
                       x={viewBox.x}
                       y={y}
                       textAnchor="middle"
-                      fill="var(--accent-blue)"
+                      fill="var(--accent)"
                       fillOpacity={0.35}
                       fontSize={10}
                       className="metric-chart-manual-label"

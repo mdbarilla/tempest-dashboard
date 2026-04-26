@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { shouldShowGardenNav } from '../utils/gardenNav';
 import './BottomNav.css';
 
 const BottomNav = () => {
@@ -8,6 +9,14 @@ const BottomNav = () => {
 
   const isHistory = pathname.startsWith('/history');
   const isChat = pathname.startsWith('/chat');
+
+  const showGarden = shouldShowGardenNav();
+
+  // Don't render when loaded inside an iframe (e.g. dev recursive load of dashboard into garden frame)
+  if (window.self !== window.top) return null;
+
+  // Guest page has its own minimal footer — no nav needed
+  if (pathname === '/guest') return null;
 
   return (
     <nav className="bottom-nav" aria-label="Main navigation">
@@ -54,17 +63,31 @@ const BottomNav = () => {
         </span>
         <span className="bottom-nav-label">History</span>
       </NavLink>
-      <NavLink
-        to="/chat"
-        className={({ isActive }) => `bottom-nav-item ${isActive || isChat ? 'active' : ''}`}
-      >
-        <span className="bottom-nav-icon" aria-hidden>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          </svg>
-        </span>
-        <span className="bottom-nav-label">Ask</span>
-      </NavLink>
+      {showGarden ? (
+        <NavLink
+          to="/garden"
+          className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
+        >
+          <span className="bottom-nav-icon" aria-hidden>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M3.707,21.707,6.674,18.74a7.533,7.533,0,0,0,4.2,1.23,8.888,8.888,0,0,0,6.332-2.763C21.02,13.4,21.958,3.509,22,3.09a1,1,0,0,0-.289-.8A1.028,1.028,0,0,0,20.91,2c-.419.038-10.3.976-14.117,4.789C3.224,10.362,3.579,14.857,5.26,17.326L2.293,20.293a1,1,0,0,0,1.414,1.414Zm4.5-13.5c2.584-2.583,8.956-3.7,11.65-4.063-.365,2.693-1.477,9.062-4.064,11.649C13,18.581,9.848,18.25,8.125,17.289l4.582-4.582a1,1,0,0,0-1.414-1.414L6.712,15.874C5.751,14.151,5.42,10.994,8.207,8.207Z" />
+            </svg>
+          </span>
+          <span className="bottom-nav-label">Garden</span>
+        </NavLink>
+      ) : (
+        <NavLink
+          to="/chat"
+          className={({ isActive }) => `bottom-nav-item ${isActive || isChat ? 'active' : ''}`}
+        >
+          <span className="bottom-nav-icon" aria-hidden>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+          </span>
+          <span className="bottom-nav-label">Ask</span>
+        </NavLink>
+      )}
     </nav>
   );
 };

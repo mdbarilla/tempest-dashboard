@@ -123,10 +123,10 @@ function WeatherQuickCard({ weatherData, lang, $, useCelsius }) {
               </div>
             </>
           )}
-          <Link to="/" className="quick-link">{$(VISIT.ui.fullForecast)} →</Link>
+          <a href="/" className="quick-link">{$(VISIT.ui.fullForecast)} →</a>
         </>
       ) : (
-        <Link to="/" className="quick-link">{$(VISIT.ui.viewWeather)} →</Link>
+        <a href="/" className="quick-link">{$(VISIT.ui.viewWeather)} →</a>
       )}
     </div>
   );

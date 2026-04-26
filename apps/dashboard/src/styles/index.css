@@ -9,6 +9,7 @@
   --app-gutter: 3rem;           /* Master variable for left-alignment (48px desktop) */
   --app-gutter-tablet: 2rem;    /* 32px tablet */
   --app-gutter-mobile: 1.5rem;  /* 24px mobile */
+  --side-nav-width: 196px;
   --card-padding: 1.5rem;
   --section-gap: 4rem;
   --modal-controls-padding-y: 1rem;
@@ -125,10 +126,22 @@
   --text-primary: #121214;         /* 21:1 contrast ratio (AAA) */
   --text-secondary: #52525B;       /* 4.8:1 contrast ratio (AA) */
   --text-muted: #999999;
-  --accent-blue: #4d7d9d;         /* steel/slate blue: dialed back from #3e6b8a, noticeable, not too blue */
-  --trendline-stroke: var(--accent-blue);  /* sparklines in metrics cards only; primary hourly uses --text-secondary */
+  --accent: #4d7d9d;               /* steel/slate blue — name is agnostic; color may vary by theme */
+  --trendline-stroke: var(--accent);  /* sparklines in metrics cards only; primary hourly uses --text-secondary */
   --border-light: rgba(0, 0, 0, 0.12);
   --shadow-soft: 0 2px 12px rgba(0, 0, 0, 0.04);
+
+  /* Garden palette — single source of truth for both route-garden and garden dashboard band */
+  --garden-accent: #2d5a3d;
+  --garden-overlay: rgba(45, 90, 61, 0.12);
+  --garden-overlay-subtle: rgba(45, 90, 61, 0.08);
+  --garden-overlay-hover: rgba(45, 90, 61, 0.18);
+  --garden-card: #f7fcf9;
+  --garden-surface: #e0ebe6;
+  --garden-bg-primary: #f2f8f5;
+  --garden-text-secondary: #3d4a45;
+  --garden-text-muted: #6b7a73;
+  --garden-border: rgba(45, 90, 61, 0.14);
 
   /* Icon Standards */
   --stroke-width: 2px;
@@ -137,6 +150,8 @@
   /* Typography */
   --font-primary: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-display: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* “Tower Hill” wordmark — Fraunces (loaded in public/index.html) */
+  --font-brand-serif: 'Fraunces', Georgia, serif;
   --font-body: var(--font-primary);
   --font-size-base: 1rem;         /* Body, form inputs */
   --font-size-secondary: 0.875rem; /* Timestamp, atmospheric summary, metrics secondary, footer-link, forecast-condition, coming-soon (secondary-tier text) */
@@ -159,7 +174,7 @@ body.theme-dark {
   --text-primary: #FFFFFF;         /* 21:1 contrast ratio (AAA) */
   --text-secondary: #A1A1AA;       /* 4.8:1 contrast ratio (AA) */
   --text-muted: #71717A;
-  --accent-blue: #E4E4E7;          /* 7:1 contrast for icons/accents */
+  --accent: #E4E4E7;               /* 7:1 contrast for icons/accents */
   --trendline-stroke: var(--text-secondary);  /* sparklines in metrics cards; primary hourly also --text-secondary */
   --border-light: rgba(255, 255, 255, 0.1);
   --ui-border: rgba(255, 255, 255, 0.1);
@@ -169,6 +184,67 @@ body.theme-dark {
   --accent-overlay: rgba(228, 228, 231, 0.15);
   --accent-overlay-hover: rgba(228, 228, 231, 0.22);
   --accent-overlay-subtle: rgba(228, 228, 231, 0.08);
+  --ask-input-fill: rgba(255, 255, 255, 0.12);
+
+  /* Garden palette — dark mode overrides */
+  --garden-accent: #7ab88a;
+  --garden-overlay: rgba(122, 184, 138, 0.15);
+  --garden-overlay-subtle: rgba(122, 184, 138, 0.08);
+  --garden-overlay-hover: rgba(122, 184, 138, 0.22);
+  --garden-card: #2e3a34;
+  --garden-surface: #28342e;
+  --garden-bg-primary: #1c2622;
+  --garden-text-secondary: #bcc8c2;
+  --garden-text-muted: #8a9892;
+  --garden-border: rgba(180, 200, 190, 0.14);
+}
+
+/* Garden route: match Garden app chrome (mint / forest) — see Garden/app/src/styles/index.css
+   Values reference --garden-* tokens (defined in :root / body.theme-dark above) so the
+   palette has a single source of truth shared with the garden dashboard band. */
+body.route-garden {
+  --bg-primary: var(--garden-bg-primary);
+  --bg-secondary: var(--garden-surface);
+  --bg-card: var(--garden-card);
+  --bg-panel: var(--garden-card);
+  --text-primary: #121214;
+  --text-secondary: var(--garden-text-secondary);
+  --text-muted: var(--garden-text-muted);
+  --border-light: var(--garden-border);
+  --ui-border: var(--garden-border);
+  --shadow-soft: 0 2px 12px rgba(0, 0, 0, 0.05);
+  --bg-card-tint: var(--garden-surface);
+  --bg-card-hover: color-mix(in srgb, var(--garden-surface) 88%, white);
+  --accent: var(--garden-accent);
+  --trendline-stroke: var(--garden-accent);
+  --accent-overlay: var(--garden-overlay);
+  --accent-overlay-hover: var(--garden-overlay-hover);
+  --accent-overlay-subtle: var(--garden-overlay-subtle);
+  --overlay-on-light-hover: var(--garden-overlay-subtle);
+  --overlay-on-light-strong: var(--garden-overlay);
+}
+
+body.route-garden.theme-dark {
+  --bg-primary: var(--garden-bg-primary);
+  --bg-secondary: var(--garden-surface);
+  --bg-card: var(--garden-card);
+  --bg-panel: var(--garden-card);
+  --text-primary: #eef4f0;
+  --text-secondary: var(--garden-text-secondary);
+  --text-muted: var(--garden-text-muted);
+  --border-light: var(--garden-border);
+  --ui-border: var(--garden-border);
+  --shadow-soft: 0 2px 12px rgba(0, 0, 0, 0.4);
+  --bg-card-tint: var(--garden-surface);
+  --bg-card-hover: color-mix(in srgb, var(--garden-surface) 96%, #3e4e46);
+  --accent: var(--garden-accent);
+  --trendline-stroke: var(--garden-accent);
+  --accent-overlay: var(--garden-overlay);
+  --accent-overlay-hover: var(--garden-overlay-hover);
+  --accent-overlay-subtle: var(--garden-overlay-subtle);
+  --overlay-on-dark-hover: rgba(122, 184, 138, 0.12);
+  --overlay-on-dark-strong: rgba(122, 184, 138, 0.18);
+  --overlay-on-dark-subtle: rgba(255, 255, 255, 0.06);
   --ask-input-fill: rgba(255, 255, 255, 0.12);
 }
 
@@ -190,6 +266,13 @@ body {
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+}
+
+/* “Tower Hill” wordmark — Fraunces; pair with Public Sans for city (Wayland / Garden) */
+.th-brand-name {
+  font-family: var(--font-brand-serif);
+  font-weight: var(--weight-semibold);
+  font-style: normal;
 }
 
 #root {

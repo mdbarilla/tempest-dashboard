@@ -26,7 +26,7 @@ export function getTrendData(metric, recent, _forecast) {
   return recent[metric];
 }
 
-const TREND_HOURS = 12;
+const TREND_HOURS = 24;
 
 export function getTrendCallouts(metric, trendData, hours = TREND_HOURS) {
   if (!trendData || !Array.isArray(trendData) || trendData.length < 2) return null;
@@ -120,6 +120,19 @@ export function getSunTime(forecast) {
   };
 }
 
+function formatWindSecondary(wind) {
+  if (!wind) return '';
+  const dir = wind.directionText || '';
+  const parts = [];
+  if (wind.lull != null && wind.gust != null && wind.speed != null) {
+    parts.push(`${Math.round(wind.lull)}–${Math.round(wind.gust)} mph`);
+  } else if (wind.gust != null && wind.speed !== wind.gust) {
+    parts.push(`Gusts ${Math.round(wind.gust)} mph`);
+  }
+  if (dir) parts.push(dir);
+  return parts.length ? parts.join(' ') : '';
+}
+
 export function calculateDewPoint(tempF, humidity) {
   const tempC = ((tempF - 32) * 5) / 9;
   const a = 17.27, b = 237.7;
@@ -192,7 +205,7 @@ export function buildConditionsMetrics({ current, forecast, recent }) {
       label: 'Wind',
       value: Math.round(current.wind.speed),
       unit: 'mph',
-      secondary: `Gusts ${Math.round(current.wind.gust)} mph ${current.wind.directionText}`,
+      secondary: formatWindSecondary(current.wind),
     },
     {
       type: 'precipitation',

@@ -58,7 +58,7 @@ mkdir -p "${BUILD_DIR}/deployment/logs"
 
 # Copy backend files (excluding node_modules - will be built on Pi)
 echo "  → Copying backend files..."
-rsync -a --exclude 'node_modules' --exclude '*.log' --exclude '.DS_Store' "${PROJECT_ROOT}/backend/" "${BUILD_DIR}/deployment/backend/"
+rsync -a --exclude 'node_modules' --exclude '*.log' --exclude '.DS_Store' --exclude '.env' "${PROJECT_ROOT}/backend/" "${BUILD_DIR}/deployment/backend/"
 # Remove dev dependencies from package.json
 cd "${BUILD_DIR}/deployment/backend"
 # Keep only production dependencies

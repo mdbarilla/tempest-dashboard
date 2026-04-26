@@ -1,0 +1,111 @@
+/* Left icon-based nav (tablet landscape + desktop) */
+
+.side-nav-toggle {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  background: transparent;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.side-nav-toggle:hover {
+  background: var(--overlay-on-light-hover);
+  color: var(--text-primary);
+}
+
+body.theme-dark .side-nav-toggle:hover {
+  background: var(--overlay-on-dark-hover);
+}
+
+.side-nav {
+  width: var(--side-nav-width);
+  padding: 0.75rem 0.5rem;
+  background: transparent;
+  border-right: 1px solid var(--border-light);
+  flex-shrink: 0;
+}
+
+.side-nav-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-top: 0.25rem;
+}
+
+.side-nav-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0.25rem;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: var(--text-secondary);
+  transition: background 0.2s ease, color 0.2s ease;
+  user-select: none;
+  min-height: 54px;
+}
+
+.side-nav-item:hover {
+  background: var(--overlay-on-light);
+  color: var(--text-primary);
+}
+
+body.theme-dark .side-nav-item:hover {
+  background: var(--overlay-on-dark-hover);
+}
+
+.side-nav-item.active {
+  background: var(--overlay-on-light-subtle);
+  color: var(--text-primary);
+}
+
+body.theme-dark .side-nav-item.active {
+  background: var(--accent-overlay-subtle);
+  color: var(--accent);
+}
+
+.side-nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+}
+
+.side-nav-label {
+  font-size: 0.72rem;
+  font-weight: var(--weight-medium);
+  text-align: center;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.side-nav-badge {
+  position: absolute;
+  right: 0.35rem;
+  top: 0.35rem;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-light);
+  opacity: var(--opacity-dim);
+}
+
+/* Only active on tablet landscape + desktop. */
+@media (max-width: 767px) {
+  .side-nav,
+  .side-nav-toggle {
+    display: none;
+  }
+}
+

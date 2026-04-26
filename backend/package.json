@@ -1,6 +1,6 @@
 {
   "name": "tempest-backend",
-  "version": "1.5.2",
+  "version": "1.5.7",
   "description": "Backend API server for Tempest Weather Suite",
   "main": "server.js",
   "scripts": {

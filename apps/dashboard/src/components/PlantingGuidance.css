@@ -1,0 +1,57 @@
+.planting-guidance {
+  margin: 0 var(--app-gutter-mobile) var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg-card));
+  border: 1px solid var(--border-light);
+  max-width: 100%;
+}
+
+@media (min-width: 768px) {
+  .planting-guidance {
+    margin-left: var(--app-gutter-tablet, 2rem);
+    margin-right: var(--app-gutter-tablet, 2rem);
+  }
+}
+
+@media (min-width: 1024px) {
+  .planting-guidance {
+    margin-left: var(--app-gutter);
+    margin-right: var(--app-gutter);
+  }
+}
+
+.planting-guidance__line {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-secondary);
+  line-height: 1.45;
+  color: var(--text-primary);
+}
+
+.planting-guidance__line:last-of-type {
+  margin-bottom: 0;
+}
+
+.planting-guidance__safe strong {
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.planting-guidance__risk {
+  color: var(--text-secondary);
+}
+
+.planting-guidance__trend {
+  color: var(--text-secondary);
+}
+
+.planting-guidance__disclaimer {
+  margin: var(--space-3) 0 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+body.theme-dark .planting-guidance {
+  background: color-mix(in srgb, var(--accent) 18%, var(--bg-card));
+}

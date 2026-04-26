@@ -2,13 +2,13 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import WeatherIcon from './WeatherIcon';
-import ConditionCorrector from './ConditionCorrector';
+import SharedHeaderRow from './SharedHeaderRow';
 import { ReactComponent as ThumbUpIcon } from './thumb-up-icon.svg';
 import { ReactComponent as ThumbDownIcon } from './thumb-down-icon.svg';
 import StormWarningDetail from './StormWarningDetail';
-import ViewToggle from './ViewToggle';
 import AtmosphereFeedbackModal from './AtmosphereFeedbackModal';
 import './StormWarning.css';
+import './ConditionCorrector.css'; /* for .corrected-label */
 import './CurrentWeather.css';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api/weather';
@@ -121,8 +121,6 @@ const CurrentWeather = ({ current, forecast, lastUpdate, alerts = [], atmosphere
   const temp = Math.round(current.temperature.fahrenheit);
   const feelsLike = Math.round(current.feelsLike.fahrenheit);
   const conditions = forecast?.current?.conditions || 'Clear';
-  const originalCondition = forecast?.current?.originalCondition;
-  const correctionId = forecast?.current?.correctionId;
 
   // Calculate if it's currently nighttime based on sunset/sunrise
   const isCurrentlyNight = () => {
@@ -173,36 +171,6 @@ const CurrentWeather = ({ current, forecast, lastUpdate, alerts = [], atmosphere
   const { high: todayHigh, low: todayLow } = calculateTodayHighLow();
 
   const isNight = isCurrentlyNight();
-
-  const handleCorrection = async (reportedCondition, precipPct = null) => {
-    try {
-      await axios.post(`${API_BASE_URL}/correction`, {
-        timestamp: current.timestamp,
-        reportedCondition,
-        originalCondition: originalCondition || conditions,
-        temperature: current.temperature.fahrenheit,
-        precip_pct_at_correction: precipPct != null ? Number(precipPct) : null
-      });
-
-      // Refresh the page to get updated conditions
-      window.location.reload();
-    } catch (error) {
-      console.error('Error submitting correction:', error);
-      throw error;
-    }
-  };
-
-  const handleCancelCorrection = async () => {
-    if (!correctionId) return;
-
-    try {
-      await axios.delete(`${API_BASE_URL}/correction/${correctionId}?obs_timestamp=${current.timestamp}`);
-      window.location.reload();
-    } catch (error) {
-      console.error('Error canceling correction:', error);
-      alert('Failed to cancel correction. Please try again.');
-    }
-  };
 
   const buildFeedbackPayload = () => {
     if (!atmosphere?.description) return {};
@@ -276,25 +244,14 @@ const CurrentWeather = ({ current, forecast, lastUpdate, alerts = [], atmosphere
       {/* Header stays full-width */}
       <div className="weather-header">
         <div className="location-info">
-          <h1>Tower Hill&nbsp;&nbsp;<span className="location-city">Wayland</span></h1>
+          <h1>
+            <span className="th-brand-name">Tower Hill</span>
+            &nbsp;&nbsp;
+            <span className="location-city">Wayland</span>
+          </h1>
           {lastUpdate && (
             <div className="weather-header-row">
-              <span className="page-and-update-mobile">
-                Dashboard • Updated {lastUpdate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
-              </span>
-              <span className="weather-header-nav-desktop">
-                <span className="last-update">
-                  Updated {lastUpdate.toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </span>
-                <ViewToggle />
-                <span className="view-toggle-bullet" aria-hidden="true">•</span>
-                <Link to="/history" className="view-toggle-label history-link">History</Link>
-                <span className="view-toggle-bullet" aria-hidden="true">•</span>
-                <Link to="/chat" className="view-toggle-label history-link">Ask</Link>
-              </span>
+              <SharedHeaderRow />
             </div>
           )}
         </div>
@@ -310,20 +267,10 @@ const CurrentWeather = ({ current, forecast, lastUpdate, alerts = [], atmosphere
               {temp}°
             </Link>
             <div className="metadata-container">
-              <div className="conditions-container">
+                <div className="conditions-container">
                 <div className="conditions">{conditions}</div>
-                {isLocal && (
-                  <div className="condition-actions">
-                    <ConditionCorrector
-                      currentCondition={conditions}
-                      temperature={current.temperature.fahrenheit}
-                      timestamp={current.timestamp}
-                      currentPrecipPct={forecast?.hourly?.[0]?.precipProbability ?? null}
-                      onCorrect={handleCorrection}
-                      onCancel={handleCancelCorrection}
-                      isCorrected={isCorrected}
-                    />
-                  </div>
+                {isCorrected && (
+                  <span className="corrected-label">Corrected</span>
                 )}
                 {alerts.length > 0 && (
                   <button

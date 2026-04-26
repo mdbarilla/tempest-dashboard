@@ -2,7 +2,7 @@
 
 A modern, beautiful weather dashboard for Raspberry Pi, powered by the Tempest Weather API.
 
-![Version](https://img.shields.io/badge/version-1.4.11-blue)
+![Version](https://img.shields.io/badge/version-1.5.7-blue)
 ![Node](https://img.shields.io/badge/node-20.x-green)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Deploy](https://img.shields.io/badge/deploy-Raspberry%20Pi-brightgreen)
@@ -229,8 +229,8 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for complete troubleshooting guide.
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
 
-### Latest: v1.4.11
-- Tappable metric cards with detail modals; 3-day and 7-day charts; design tokens; conditions list view. See [CHANGELOG.md](CHANGELOG.md) for full history.
+### Latest: v1.5.7
+- Planting guidance only on garden overview; see [CHANGELOG.md](CHANGELOG.md) for full history.
 
 ## Resources
 

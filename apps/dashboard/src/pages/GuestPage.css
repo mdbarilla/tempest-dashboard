@@ -14,7 +14,7 @@
   --text-primary:  #121214;
   --text-secondary: #52525B;
   --text-muted:    #999999;
-  --accent-blue:   #4d7d9d;
+  --accent:   #4d7d9d;
   --border-light:  rgba(0, 0, 0, 0.12);
   --shadow-soft:   0 2px 12px rgba(0, 0, 0, 0.06);
   --accent-overlay: rgba(77, 125, 157, 0.2);
@@ -49,7 +49,7 @@ body.theme-dark .guest-page {
   --text-primary:  #FFFFFF;
   --text-secondary: #A1A1AA;
   --text-muted:    #71717A;
-  --accent-blue:   #7daacc;
+  --accent:   #7daacc;
   --border-light:  rgba(255, 255, 255, 0.1);
   --shadow-soft:   0 2px 12px rgba(0, 0, 0, 0.3);
   --accent-overlay: rgba(125, 170, 204, 0.2);
@@ -71,7 +71,7 @@ body.theme-dark .home-instructions-modal {
   --bg-primary:     #1a1a2e;
   --bg-secondary:   #16213e;
   --border-light:   rgba(255, 255, 255, 0.1);
-  --accent-blue:    #7daacc;
+  --accent:    #7daacc;
   background: var(--bg-primary);
   color: var(--text-primary);
 }
@@ -350,7 +350,7 @@ body.theme-dark .day-modal-back:hover {
 .qf-rain {
   font-size: 0.65rem;
   font-weight: var(--weight-medium);
-  color: var(--accent-blue);
+  color: var(--accent);
   letter-spacing: 0.02em;
 }
 
@@ -361,7 +361,7 @@ body.theme-dark .day-modal-back:hover {
 
 .quick-link {
   font-size: var(--font-size-secondary);
-  color: var(--accent-blue);
+  color: var(--accent);
   font-weight: var(--weight-medium);
   text-decoration: none;
   margin-top: var(--space-1);
@@ -520,7 +520,7 @@ body.theme-dark .day-modal-back:hover {
 
 .day-card-cta {
   font-size: var(--font-size-secondary);
-  color: var(--accent-blue);
+  color: var(--accent);
   font-weight: var(--weight-medium);
   margin-top: var(--space-1);
 }
@@ -569,7 +569,7 @@ body.theme-dark .day-modal-back:hover {
   --bg-primary:     #f5f3f0;
   --bg-secondary:   #eae6e1;
   --border-light:   rgba(0, 0, 0, 0.12);
-  --accent-blue:    #4d7d9d;
+  --accent:    #4d7d9d;
 }
 
 .day-modal-image {
@@ -690,7 +690,7 @@ body.theme-dark .day-modal-back:hover {
 
 .day-option-link {
   font-size: 0.8125rem;
-  color: var(--accent-blue);
+  color: var(--accent);
   font-weight: var(--weight-medium);
   text-decoration: none;
   margin-top: var(--space-1);
@@ -761,7 +761,7 @@ body.theme-dark .day-modal-back:hover {
 
 .day-modal-link {
   font-size: var(--font-size-secondary);
-  color: var(--accent-blue);
+  color: var(--accent);
   font-weight: var(--weight-medium);
   text-decoration: none;
   padding: var(--space-2) var(--space-3);
@@ -783,7 +783,7 @@ body.theme-dark .day-modal-back:hover {
   font-family: var(--font-primary);
   font-size: var(--font-size-secondary);
   font-weight: var(--weight-medium);
-  color: var(--accent-blue);
+  color: var(--accent);
   cursor: pointer;
   text-align: left;
 }
@@ -808,7 +808,7 @@ body.theme-dark .day-modal-back:hover {
   --bg-primary:     #f5f3f0;
   --bg-secondary:   #eae6e1;
   --border-light:   rgba(0, 0, 0, 0.12);
-  --accent-blue:    #4d7d9d;
+  --accent:    #4d7d9d;
 }
 
 .history-modal-hero {
@@ -948,7 +948,7 @@ body.theme-dark .day-modal-back:hover {
 }
 
 .explore-link:hover {
-  color: var(--accent-blue);
+  color: var(--accent);
 }
 
 .explore-note {
@@ -1147,7 +1147,7 @@ body.theme-dark .day-modal-back:hover {
 
 .guestbook-input:focus,
 .guestbook-textarea:focus {
-  border-color: var(--accent-blue);
+  border-color: var(--accent);
 }
 
 .guestbook-btn {
@@ -1203,7 +1203,7 @@ body.theme-dark .day-modal-back:hover {
   --bg-primary:     #f5f3f0;
   --bg-secondary:   #eae6e1;
   --border-light:   rgba(0, 0, 0, 0.12);
-  --accent-blue:    #4d7d9d;
+  --accent:    #4d7d9d;
 }
 
 .home-instructions-content {
@@ -1288,7 +1288,7 @@ body.theme-dark .day-modal-back:hover {
   display: inline-block;
   margin-top: var(--space-2);
   font-size: var(--font-size-secondary);
-  color: var(--accent-blue);
+  color: var(--accent);
   font-weight: var(--weight-medium);
   text-decoration: none;
 }
@@ -1315,7 +1315,7 @@ body.theme-dark .day-modal-back:hover {
 
 .guest-footer-link {
   font-size: var(--font-size-secondary);
-  color: var(--accent-blue);
+  color: var(--accent);
   text-decoration: none;
   font-weight: var(--weight-medium);
 }

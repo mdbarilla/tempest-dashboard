@@ -2,9 +2,9 @@
 .storm-warning-label {
   padding: 0.5rem 1rem;
   background: var(--bg-primary);
-  border: 1px solid var(--accent-blue);
+  border: 1px solid var(--accent);
   border-radius: var(--radius-lg);
-  color: var(--accent-blue);
+  color: var(--accent);
   font-size: 0.75rem;
   font-weight: 600;
   margin-left: 0.5rem;
@@ -110,7 +110,7 @@ body.theme-dark .storm-warning-label:hover {
 .storm-warning-event {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--accent-blue);
+  color: var(--accent);
   margin-bottom: 0.5rem;
 }
 

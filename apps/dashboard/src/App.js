@@ -12,14 +12,45 @@ import HistoryPage from './pages/HistoryPage';
 import ChatPage from './pages/ChatPage';
 import MetricDetailView from './pages/MetricDetailView';
 import BottomNav from './components/BottomNav';
-import WhatsGrowing from './components/WhatsGrowing';
+import SideNav from './components/SideNav';
 import GardenFrame from './components/GardenFrame';
+import GardenDashboardSection from './components/GardenDashboardSection';
 import ConditionCorrector from './components/ConditionCorrector';
 import GuestPage from './pages/GuestPage';
 import './styles/App.css';
+import { SideNavContext } from './context/SideNavContext';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api/weather';
 const REFRESH_INTERVAL = 60000; // 60 seconds
+
+const SIDE_NAV_STORAGE_KEY = 'side-nav-open';
+const KIOSK_WIDE_MIN = 1600;
+const MOBILE_MAX = 767;
+const TABLET_MAX = 1024;
+
+function readSideNavStoredOpen() {
+  try {
+    const raw = localStorage.getItem(SIDE_NAV_STORAGE_KEY);
+    if (raw === 'true') return true;
+    if (raw === 'false') return false;
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+function writeSideNavStoredOpen(val) {
+  try {
+    localStorage.setItem(SIDE_NAV_STORAGE_KEY, val ? 'true' : 'false');
+  } catch {
+    // ignore
+  }
+}
+
+function getDefaultSideNavOpen(width) {
+  if (width >= KIOSK_WIDE_MIN) return false;
+  return true;
+}
 
 /** True when the URL is /conditions/:metric (metric detail modal open). */
 function isMetricDetailPath(pathname) {
@@ -110,13 +141,67 @@ function App() {
   const [lastFetchError, setLastFetchError] = useState(null); // { message, code, url } for dev debugging
   const [conditionCorrectorOpen, setConditionCorrectorOpen] = useState(false);
   const isLocal = isLocalAccess();
+  const [sideNavEnabled, setSideNavEnabled] = useState(false);
+  const [sideNavOpen, setSideNavOpen] = useState(() => {
+    const stored = typeof window !== 'undefined' ? readSideNavStoredOpen() : null;
+    if (stored != null) return stored;
+    const w = typeof window !== 'undefined' ? window.innerWidth : 1024;
+    return getDefaultSideNavOpen(w);
+  });
+
+  // Side nav: enabled on tablet landscape + desktop; disabled on mobile + tablet portrait.
+  useEffect(() => {
+    const compute = () => {
+      if (typeof window === 'undefined') return false;
+      if (window.self !== window.top) return false;
+      if (window.location.pathname === '/guest') return false;
+      const w = window.innerWidth;
+      if (w <= MOBILE_MAX) return false;
+      const isTablet = w <= TABLET_MAX;
+      const isPortrait = window.matchMedia && window.matchMedia('(orientation: portrait)').matches;
+      if (isTablet && isPortrait) return false;
+      return true;
+    };
+    const apply = () => setSideNavEnabled(compute());
+    apply();
+    window.addEventListener('resize', apply);
+    if (window.matchMedia) {
+      const mql = window.matchMedia('(orientation: portrait)');
+      mql.addEventListener?.('change', apply);
+      return () => {
+        window.removeEventListener('resize', apply);
+        mql.removeEventListener?.('change', apply);
+      };
+    }
+    return () => window.removeEventListener('resize', apply);
+  }, []);
+
+  // When enabled and no user preference exists, follow kiosk/desktop defaults.
+  useEffect(() => {
+    if (!sideNavEnabled) return;
+    const stored = readSideNavStoredOpen();
+    if (stored != null) return;
+    setSideNavOpen(getDefaultSideNavOpen(window.innerWidth));
+  }, [sideNavEnabled]);
 
   const refreshAtmosphere = useCallback(async () => {
     try {
-      const r = await axios.get(`${API_BASE_URL}/complete?refresh_atmosphere=1`, { timeout: 10000 });
+      const r = await axios.get(
+        `${API_BASE_URL}/complete?refresh_atmosphere=1&_=${Date.now()}`,
+        { timeout: 10000, headers: { 'Cache-Control': 'no-cache' } }
+      );
       if (r.data?.success) {
-        setWeatherData(r.data.data);
+        const next = r.data.data;
+        setWeatherData(next);
         setLastUpdate(new Date());
+        setIsUsingCachedData(false);
+        setConnectionStatus('online');
+        try {
+          localStorage.setItem('weatherData', JSON.stringify(next));
+          localStorage.setItem('weatherDataTimestamp', Date.now().toString());
+        } catch {
+          /* ignore */
+        }
       }
     } catch (e) {
       console.error('Refresh atmosphere failed', e);
@@ -172,10 +257,19 @@ function App() {
       const q = [];
       if (isManualRetry) q.push('refresh_alerts=1');
       if (forceRefreshAtmosphere) q.push('refresh_atmosphere=1');
-      const completeUrl = `${API_BASE_URL}/complete${q.length ? '?' + q.join('&') : ''}`;
+      q.push(`_=${Date.now()}`);
+      const completeUrl = `${API_BASE_URL}/complete?${q.join('&')}`;
       const [weatherResponse, recentResponse] = await Promise.all([
-        axios.get(completeUrl, { timeout: 10000 }),
-        axios.get(`${API_BASE_URL}/recent?hours=24`, { timeout: 10000 }).catch(() => ({ data: { success: false } }))
+        axios.get(completeUrl, {
+          timeout: 10000,
+          headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
+        }),
+        axios
+          .get(`${API_BASE_URL}/recent?hours=24&_=${Date.now()}`, {
+            timeout: 10000,
+            headers: { 'Cache-Control': 'no-cache' },
+          })
+          .catch(() => ({ data: { success: false } })),
       ]);
 
       if (weatherResponse.data.success) {
@@ -270,7 +364,7 @@ function App() {
         if (age < 10 * 60 * 1000 && !sentinel) {
           setWeatherData(data);
           setLastUpdate(new Date(timestamp));
-          setIsUsingCachedData(true);
+          /* Fresh fetch runs next; only set isUsingCachedData after failed fetch (see catch path) */
           setLoading(false);
         } else if (sentinel) {
           localStorage.removeItem('weatherData');
@@ -487,7 +581,7 @@ function App() {
         onRefresh={() => fetchWeather(0, false)}
       />
       <Forecast forecast={weatherData.forecast} />
-      <WhatsGrowing />
+      <GardenDashboardSection forecast={weatherData.forecast} />
     </>
   );
   };
@@ -545,6 +639,15 @@ function App() {
     <BrowserRouter>
       <RefreshManager fetchWeather={fetchWeather} />
       <MenuProvider {...appMenuValue}>
+      <SideNavContext.Provider value={{
+        enabled: sideNavEnabled,
+        open: sideNavEnabled && sideNavOpen,
+        toggle: () => setSideNavOpen((v) => {
+          const next = !v;
+          writeSideNavStoredOpen(next);
+          return next;
+        }),
+      }}>
       <div className="app">
         {connectionStatus !== 'online' && (
         <div className={`connection-banner ${connectionStatus}`}>
@@ -600,8 +703,11 @@ function App() {
       )}
 
       <div className="container">
-        <main className="main-content">
-          <Routes>
+        <div className="app-shell">
+          <SideNav />
+          <div className="app-shell-content">
+            <main className="main-content">
+              <Routes>
             <Route
               path="/conditions/:metric"
               element={<MetricDetailRoute />}
@@ -652,10 +758,11 @@ function App() {
             <Route path="/guest" element={<GuestPage weatherData={weatherData} />} />
             <Route path="/" element={<DashboardContent />} />
             <Route path="*" element={<DashboardContent />} />
-          </Routes>
-        </main>
-
-        <BottomNav />
+              </Routes>
+            </main>
+            <BottomNav />
+          </div>
+        </div>
       </div>
       </div>
       {conditionCorrectorOpen && weatherData && ReactDOM.createPortal(
@@ -672,6 +779,7 @@ function App() {
         />,
         document.body
       )}
+      </SideNavContext.Provider>
       </MenuProvider>
     </BrowserRouter>
   );

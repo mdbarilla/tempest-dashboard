@@ -6,6 +6,7 @@
   touch-action: pan-x pinch-zoom; /* Allow horizontal pan and pinch zoom on chart */
   -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
   position: relative;
+  overflow: visible; /* Prevent clipping of axis labels */
 }
 
 .metric-chart-container--click {
@@ -65,7 +66,7 @@
 
 .manual-entry-details {
   font-size: 0.875rem;
-  color: var(--accent-blue);
+  color: var(--accent);
 }
 
 .manual-entry-notes {

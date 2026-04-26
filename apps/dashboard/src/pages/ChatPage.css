@@ -4,7 +4,7 @@
 @import '../styles/page-header.css';
 
 .chat-page {
-  padding: var(--app-gutter-mobile) var(--app-gutter-mobile) 0;
+  padding: var(--padding-mobile) var(--padding-mobile) 0;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -16,24 +16,24 @@
   .chat-page {
     padding-left: 0;
     padding-right: 0;
-    padding-top: var(--app-gutter-mobile);
+    padding-top: var(--padding-mobile);
   }
 
   .chat-header {
-    padding-left: var(--app-gutter-mobile);
-    padding-right: var(--app-gutter-mobile);
+    padding-left: var(--padding-mobile);
+    padding-right: var(--padding-mobile);
   }
 }
 
 @media (min-width: 768px) {
   .chat-page {
-    padding: var(--app-gutter-tablet) var(--app-gutter-tablet) var(--app-gutter-tablet);
+    padding: var(--padding-tablet) var(--padding-tablet) var(--padding-tablet);
   }
 }
 
 @media (min-width: 1024px) {
   .chat-page {
-    padding: var(--app-gutter) var(--app-gutter) var(--app-gutter);
+    padding: var(--padding-desktop) var(--padding-desktop) var(--padding-desktop);
   }
 }
 

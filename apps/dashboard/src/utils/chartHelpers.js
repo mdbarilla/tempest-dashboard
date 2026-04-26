@@ -117,7 +117,7 @@ export const getMetricConfig = (metric, options = {}) => {
       unit: 'mph',
       yAxisLabel: 'Wind Speed (mph)',
       color: 'var(--trendline-stroke)',
-      colorGust: 'var(--accent-blue)',
+      colorGust: 'var(--accent)',
       domain: ['auto', 'auto']
     },
     precipitation: {
