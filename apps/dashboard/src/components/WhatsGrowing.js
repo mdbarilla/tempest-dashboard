@@ -1,11 +1,12 @@
 /**
  * What's Growing — garden thumbnails section.
- * Only renders when ?garden=1 is in the URL.
- * Links to /garden (separate garden app).
+ * Only renders on local access (towerhill.local / localhost).
+ * Hidden completely on towerhill.app (external).
  */
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { isLocalAccess } from '../utils/access';
 
 const GARDEN_API = '/api/garden';
 
@@ -14,7 +15,7 @@ export default function WhatsGrowing() {
   const [seeds, setSeeds] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const showGarden = new URLSearchParams(location.search).get('garden') === '1';
+  const showGarden = isLocalAccess() && new URLSearchParams(location.search).get('garden') === '1';
 
   useEffect(() => {
     if (!showGarden) return;
