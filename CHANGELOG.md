@@ -9,12 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Planting guidance (Tower Hill cross-module):** Merged Tempest + NWS daily lows; 10-night freeze-free gate for “safe to plant out”; frost risk and warming-trend signals. `GET /api/weather/planting-guidance`; garden `GET /api/garden/dashboard` includes `planting_guidance`. **Shown only on the garden app** (`/garden/dashboard` — `GardenDashboardPage` planting strip), not on the main weather dashboard. Event bus emits `weather.frost.clear` / `weather.frost.risk` on first transition (see `backend/modules/weather/services/planting-guidance.js`).
+- **SideNav (tablet/desktop):** Collapsible vertical sidebar for tablet and desktop viewports. Garden link is included in the sidebar but only renders when `shouldShowGardenNav()` returns true — hidden entirely on towerhill.app.
+- **`gardenNav.js` utility:** `shouldShowGardenNav()` now gates all garden UI (bottom nav tab, sidebar link, `WhatsGrowing` carousel) exclusively on `isLocalAccess()`. The `?garden=1` URL param and localStorage fallback paths are removed — garden features are local-network-only by design.
+
+### Fixed
+- **Garden nav hidden on towerhill.app (tunnel) — resolved:** Garden tab in bottom nav and sidebar link no longer appear on the external Cloudflare tunnel. `shouldShowGardenNav()` returns `isLocalAccess()` directly; no URL param or stored preference can override this. Resolves the deferred tunnel/local verification item from 1.5.8.
+- **`WhatsGrowing` carousel hidden on towerhill.app:** Carousel uses `shouldShowGardenNav()` so it is invisible on the tunnel regardless of URL params or localStorage state.
 
 ### Still open / deferred
 
 **Flag — 10-day forecast:** Update **forecast day card** design (`Forecast.js` / `Forecast.css`) in a future pass to match newer glass/editorial metric styling.
 
-**Garden module — further work:** Remaining items from 1.5.8 draft: `shouldShowGardenNav` tunnel/local verification on Pi; carousel empty-vs-error distinction on Pi (now tracked via `fetchError`); dedicated `GardenDashboardSection.css` split; breakpoint checklist. See `docs/drafts/RELEASE-1.5.8-DRAFT.md`.
+**Garden module — further work:** Remaining items from 1.5.8 draft: carousel empty-vs-error distinction on Pi (now tracked via `fetchError`); dedicated `GardenDashboardSection.css` split; breakpoint checklist. See `docs/drafts/RELEASE-1.5.8-DRAFT.md`.
 
 ## [1.5.8] - 2026-04-09
 
