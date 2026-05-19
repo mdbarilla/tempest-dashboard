@@ -197,6 +197,33 @@ router.get('/complete', async (req, res) => {
           isCumulative: true
         };
       }
+
+      // Tempest better_forecast current_conditions does not include precip_accum_last_1hr,
+      // so lastHour is always 0 from the API. Compute it using two strategies:
+      //   1. If precip_minutes_local_day <= 60, all of today's rain occurred in the last hour.
+      //   2. Otherwise compute from DB: delta between current precip_today and ~1 hour ago.
+      const precipToday = data.current.precipitation?.today ?? 0;
+      let precipLastHour = data.current.precipitation?.lastHour ?? 0;
+      if (precipLastHour === 0 && precipToday > 0) {
+        const precipMinutesToday = data.forecast?.current?.precip_minutes_local_day ?? null;
+        if (precipMinutesToday !== null && precipMinutesToday <= 60) {
+          // All rain today fell in the last hour
+          precipLastHour = precipToday;
+          data.current.precipitation = { ...data.current.precipitation, lastHour: precipLastHour };
+        } else {
+          // Compute from DB delta: find oldest observation from the 30-90 minute window
+          const nowTs = Math.floor(Date.now() / 1000);
+          const obsOneHourWindow = await db.getObservationsByTimestampRange(nowTs - 90 * 60, nowTs - 30 * 60, 5);
+          if (obsOneHourWindow.length > 0) {
+            const precipOneHourAgo = obsOneHourWindow[0].precip_today ?? 0;
+            const computed = Math.max(0, precipToday - precipOneHourAgo);
+            if (computed > 0) {
+              precipLastHour = computed;
+              data.current.precipitation = { ...data.current.precipitation, lastHour: precipLastHour };
+            }
+          }
+        }
+      }
     }
 
     // NWS active alerts (Winter Storm Warning, etc.); uses TEMPEST_LATITUDE/LONGITUDE
