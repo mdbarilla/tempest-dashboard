@@ -916,8 +916,20 @@ router.get('/recent', async (req, res) => {
       sampled = recentData;
     }
 
-    // Precipitation: merge Tempest precip_today (inches) with manual entries (additive)
-    let precipitation = sampled.map(d => d.precip_today);
+    // Precipitation: merge Tempest precip_today (inches) with manual entries (additive).
+    // Apply a running daily max because Tempest's precip_accum_local_day can drop back to 0
+    // before midnight (e.g. immediately after rain stops). The running max preserves the peak
+    // daily accumulation so the chart reflects the true total for the rest of the day.
+    const _dailyMax = new Map(); // 'YYYY-MM-DD' → peak precip_today seen so far this day
+    const precipRunningMax = sampled.map(d => {
+      const dateKey = new Date(d.timestamp * 1000).toLocaleDateString('en-CA'); // YYYY-MM-DD local
+      const raw = d.precip_today ?? 0;
+      const prev = _dailyMax.get(dateKey) ?? 0;
+      const peak = Math.max(prev, raw);
+      _dailyMax.set(dateKey, peak);
+      return peak;
+    });
+    let precipitation = precipRunningMax;
     const timestamps = sampled.map(d => d.timestamp);
 
     // Get manual precipitation entries for the time window
@@ -928,7 +940,7 @@ router.get('/recent', async (req, res) => {
 
     if (manualInWindow.length > 0 && hours <= 168) {
       // Only merge manual data for shorter ranges (hourly averages don't support this well)
-      const tempestPoints = sampled.map(d => ({ t: d.timestamp, pt: d.precip_today ?? 0 }));
+      const tempestPoints = sampled.map((d, i) => ({ t: d.timestamp, pt: precipRunningMax[i] }));
       const eventTimes = tempestPoints.length > 0
         ? [...tempestPoints.map(p => p.t), ...manualInWindow.map(m => m.timestamp)].sort((a, b) => a - b)
         : [requestedCutoff, ...manualInWindow.map(m => m.timestamp)].sort((a, b) => a - b);
