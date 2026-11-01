@@ -57,11 +57,7 @@ sudo /etc/init.d/dphys-swapfile restart
 free -m  # Verify swap is ~1024MB
 ```
 
-**Increase GPU Memory** (improves rendering stability):
-```bash
-sudo nano /boot/firmware/config.txt
-# Add or modify: gpu_mem=256
-```
+**GPU Memory**: leave at the default. `gpu_mem=256` was only needed for the old HDMI Chromium kiosk.
 
 **Enable Emergency Reboot Keys**:
 ```bash
@@ -147,6 +143,37 @@ sudo rm /etc/nginx/sites-enabled/default
 sudo nginx -t
 sudo systemctl restart nginx
 ```
+
+### 5. E-ink Display (Inky Impression 7.3)
+
+The Pi drives a Pimoroni Inky Impression 7.3 (Spectra 6) instead of an HDMI kiosk. With the Pi mounted on the display:
+
+```bash
+# Pimoroni library: enables SPI/I2C and creates ~/.virtualenvs/pimoroni
+git clone https://github.com/pimoroni/inky ~/Pimoroni/inky
+cd ~/Pimoroni/inky && ./install.sh
+~/.virtualenvs/pimoroni/bin/pip install websocket-client
+sudo reboot
+
+# Verify the board: should report "Spectra 6 7.3 800 x 480 (E673)"
+~/.virtualenvs/pimoroni/bin/python ~/Pimoroni/inky/examples/identify.py
+```
+
+Install the renderer and timer (from the repo's `raspberry-pi/eink/`):
+
+```bash
+mkdir -p ~/deployment/eink
+# From the Mac: scp raspberry-pi/eink/{inky_push.py,eink-update.service,eink-update.timer} towerhill:deployment/eink/
+sudo cp ~/deployment/eink/eink-update.{service,timer} /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now eink-update.timer
+
+# No desktop needed: boot to console and disable the old kiosk autostart
+sudo raspi-config nonint do_boot_behaviour B1
+rm -f ~/.config/autostart/dashboard.desktop
+```
+
+The timer redraws the panel on boot and every 5 minutes, skipping refreshes when nothing visible changed. See [pi-operations.md](docs/setup-operations/pi-operations.md#e-ink-display) for day-to-day commands.
 
 ---
 
@@ -280,8 +307,12 @@ free -m
 # CPU temperature
 vcgencmd measure_temp
 
-# GPU memory (should be 256MB)
-vcgencmd get_mem gpu
+# Throttling (0x0 = OK; no fan since the e-ink migration)
+vcgencmd get_throttled
+
+# E-ink refresh timer and recent results
+systemctl list-timers eink-update.timer
+journalctl -u eink-update -n 10
 
 # Find large files
 du -h ~/deployment | sort -h | tail -20
@@ -347,23 +378,18 @@ pm2 save
 pm2 logs tempest-backend
 ```
 
-### Chromium Kiosk Crashes
+### E-ink Display Not Updating
 
-**Symptom**: Browser closes unexpectedly or won't start
+**Symptom**: The "Updated" time on the panel is more than 30 minutes old
 
 **Solution**:
 ```bash
-# Clear locks and cache
-sudo pkill -9 chromium
-rm -f ~/.config/chromium/SingletonLock
-rm -rf ~/.cache/chromium
-
-# Relaunch with full options
-export DISPLAY=:0
-chromium-browser --kiosk --noerrdialogs --disable-infobars \
-  --disable-restore-session-state --disable-dev-shm-usage \
-  http://towerhill.local &
+journalctl -u eink-update -n 20                 # why the last runs failed or skipped
+sudo systemctl enable --now eink-update.timer   # make sure refreshes are scheduled
+~/.virtualenvs/pimoroni/bin/python ~/deployment/eink/inky_push.py --force   # redraw now
 ```
+
+"capture failed: page not ready" means the dashboard or backend isn't serving (see 502 Bad Gateway above).
 
 ### Post-Reboot Service Recovery
 
@@ -377,9 +403,8 @@ cd ~/deployment/backend
 pm2 start server.js --name tempest-backend
 pm2 save
 
-# 3. Launch kiosk (if desktop environment)
-export DISPLAY=:0
-chromium-browser --kiosk http://towerhill.local &
+# 3. The e-ink display redraws ~90s after boot; to force it:
+~/.virtualenvs/pimoroni/bin/python ~/deployment/eink/inky_push.py --force
 ```
 
 ### Cannot Access towerhill.local
