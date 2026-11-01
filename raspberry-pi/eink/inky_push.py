@@ -18,6 +18,7 @@ import io
 import json
 import os
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -79,9 +80,10 @@ def launch_chromium(profile_dir):
     proc = subprocess.Popen(
         ["chromium", "--headless=new", "--disable-gpu", "--hide-scrollbars",
          "--force-device-scale-factor=1", f"--window-size={WIDTH},{HEIGHT}",
-         "--no-first-run", "--remote-debugging-port=0", f"--user-data-dir={profile_dir}",
+         "--no-first-run", "--password-store=basic", "--remote-debugging-port=0", f"--user-data-dir={profile_dir}",
          "about:blank"],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        start_new_session=True,
     )
     port_file = os.path.join(profile_dir, "DevToolsActivePort")
     deadline = time.time() + 30
@@ -101,6 +103,17 @@ def launch_chromium(profile_dir):
         targets = json.load(resp)
     page = next(t for t in targets if t.get("type") == "page")
     return proc, page["webSocketDebuggerUrl"]
+
+
+def stop_chromium(proc):
+    """Chromium forks renderer/GPU helpers, so signal the whole process group."""
+    try:
+        os.killpg(proc.pid, signal.SIGTERM)
+        proc.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        os.killpg(proc.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
 
 
 def capture(url, timeout):
@@ -136,11 +149,7 @@ def capture(url, timeout):
         return image, state
     finally:
         if proc:
-            proc.terminate()
-            try:
-                proc.wait(timeout=10)
-            except subprocess.TimeoutExpired:
-                proc.kill()
+            stop_chromium(proc)
         shutil.rmtree(profile_dir, ignore_errors=True)
 
 
@@ -188,6 +197,10 @@ def main():
     parser.add_argument("--timeout", type=float, default=45, help="seconds to wait for the page to load")
     parser.add_argument("--saturation", type=float, default=0.5)
     args = parser.parse_args()
+
+    # Exit through the finally blocks (and stop Chromium) when systemd stops us or an SSH session drops.
+    for sig in (signal.SIGTERM, signal.SIGHUP):
+        signal.signal(sig, lambda *_: sys.exit(1))
 
     state = load_state()
     now = time.time()
