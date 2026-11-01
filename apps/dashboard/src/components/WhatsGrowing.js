@@ -4,18 +4,16 @@
  * Hidden completely on towerhill.app (external).
  */
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { isLocalAccess } from '../utils/access';
 
 const GARDEN_API = '/api/garden';
 
 export default function WhatsGrowing() {
-  const location = useLocation();
   const [seeds, setSeeds] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const showGarden = isLocalAccess() && new URLSearchParams(location.search).get('garden') === '1';
+  const showGarden = isLocalAccess();
 
   useEffect(() => {
     if (!showGarden) return;

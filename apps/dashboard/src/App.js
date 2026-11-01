@@ -12,7 +12,6 @@ import HistoryPage from './pages/HistoryPage';
 import ChatPage from './pages/ChatPage';
 import MetricDetailView from './pages/MetricDetailView';
 import BottomNav from './components/BottomNav';
-import WhatsGrowing from './components/WhatsGrowing';
 import GardenFrame from './components/GardenFrame';
 import ConditionCorrector from './components/ConditionCorrector';
 import GuestPage from './pages/GuestPage';
@@ -487,7 +486,6 @@ function App() {
         onRefresh={() => fetchWeather(0, false)}
       />
       <Forecast forecast={weatherData.forecast} />
-      <WhatsGrowing />
     </>
   );
   };
