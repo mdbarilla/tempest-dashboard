@@ -1,7 +1,7 @@
 /*
  * E-ink page. The Spectra 6 panel has six inks (black, white, red, yellow, blue, green);
- * every other colour is a dither of those. Keep tints dark so text dithers to mostly
- * solid ink rather than visible speckle. Preview with raspberry-pi/eink/preview.sh.
+ * every other colour is a dither of those. Text and rules use pure black/white so they
+ * print as solid ink; only the accent lines are dithered. Preview with raspberry-pi/eink/preview.sh.
  */
 
 body.eink-body {
@@ -16,14 +16,22 @@ body.eink-body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  --eink-text: #2b2b2e;
-  --eink-rule: #3a3a3e;
+  --eink-bg: #fff;
+  --eink-text: #000;
+  --eink-rule: #000;
   --eink-accent: #2f4468;
   padding: 14px 20px 4px;
-  background: #fff;
+  background: var(--eink-bg);
   color: var(--eink-text);
   font-family: 'Public Sans', -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+.eink--dark {
+  --eink-bg: #000;
+  --eink-text: #fff;
+  --eink-rule: #fff;
+  --eink-accent: #fff;
 }
 
 .eink *,

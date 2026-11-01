@@ -4,6 +4,7 @@
  *
  *   /eink                        landscape 800x480
  *   /eink?orientation=portrait   portrait 480x800 (rotated to 800x480 before display)
+ *   /eink?theme=light|dark       force a theme (default: dark from sunset to sunrise)
  *
  * Sets body[data-eink-ready="1"] once data has rendered so the capture script can wait for it.
  */
@@ -28,6 +29,14 @@ const isNightAt = (date, daily) => {
   const day = daily?.find((d) => new Date(d.date * 1000).toDateString() === date.toDateString());
   if (!day?.sunrise || !day?.sunset) return false;
   return date < new Date(day.sunrise * 1000) || date > new Date(day.sunset * 1000);
+};
+
+const resolveTheme = (param, daily) => {
+  if (param === 'light' || param === 'dark') return param;
+  const now = new Date();
+  const hasSunTimes = daily?.some((d) => d.sunrise && d.sunset && new Date(d.date * 1000).toDateString() === now.toDateString());
+  const night = hasSunTimes ? isNightAt(now, daily) : now.getHours() >= 18 || now.getHours() < 6;
+  return night ? 'dark' : 'light';
 };
 
 function HourlyStrip({ hourly, daily, count, width }) {
@@ -173,10 +182,11 @@ export default function EinkPage() {
   }, [data, error]);
 
   const frameStyle = { width: layout.width, height: layout.height };
+  const theme = resolveTheme(params.get('theme'), data?.forecast?.daily);
 
   if (error || !data?.current) {
     return (
-      <div className={`eink eink--${orientation} eink--error`} style={frameStyle}>
+      <div className={`eink eink--${orientation} eink--${theme} eink--error`} style={frameStyle}>
         <div className="eink-error-title">Tower Hill</div>
         <div className="eink-error-message">{error || 'Loading…'}</div>
         <div className="eink-updated">{new Date().toLocaleString('en-US', { hour: 'numeric', minute: '2-digit', month: 'short', day: 'numeric' })}</div>
@@ -200,7 +210,7 @@ export default function EinkPage() {
   const hourlyWidth = orientation === 'landscape' ? contentWidth - 236 : contentWidth;
 
   return (
-    <div className={`eink eink--${orientation}`} style={frameStyle}>
+    <div className={`eink eink--${orientation} eink--${theme}`} style={frameStyle}>
       <header className="eink-header">
         <div className="eink-title">
           Tower Hill <span className="eink-city">Wayland</span>
