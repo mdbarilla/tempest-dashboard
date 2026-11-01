@@ -1,6 +1,6 @@
 #!/bin/bash
 # Restart Pi services after power outage (run on the Pi via SSH).
-# Fixes: display "no signal", "unable to fetch weather data" (backend not running), "condition summary unavailable" (LLM/weather-bridge).
+# Fixes: stale e-ink display, "unable to fetch weather data" (backend not running), "condition summary unavailable" (LLM/weather-bridge).
 # Usage from Mac: ssh mbarilla@towerhill.local 'bash -s' < scripts/restart-pi-after-power.sh
 # Or SSH in first, then: bash ~/deployment/scripts/restart-pi-after-power.sh
 
@@ -24,20 +24,12 @@ echo "2. Restarting nginx (dashboard)..."
 sudo systemctl restart nginx
 echo "   Nginx: $(systemctl is-active nginx)"
 
-# 3. Relaunch kiosk (brings display back if X is running)
+# 3. Redraw the e-ink display (takes ~30s; the panel flashes while it updates)
 echo ""
-echo "3. Relaunching kiosk..."
-sudo pkill -9 chromium 2>/dev/null || true
-rm -f ~/.config/chromium/SingletonLock 2>/dev/null || true
-# Optional: clear cache if browser was sluggish (uncomment if needed)
-# rm -rf ~/.cache/chromium 2>/dev/null || true
-export DISPLAY=:0
-nohup chromium-browser --kiosk --noerrdialogs --disable-infobars --no-first-run --disable-restore-session-state --disable-dev-shm-usage http://localhost/ > /tmp/kiosk.log 2>&1 &
-# Some Pi images use 'chromium' instead of 'chromium-browser'
-if ! pgrep -x chromium-browser >/dev/null 2>&1; then
-  nohup chromium --kiosk --noerrdialogs --disable-infobars --no-first-run --disable-restore-session-state --disable-dev-shm-usage http://localhost/ > /tmp/kiosk.log 2>&1 &
-fi
-echo "   Kiosk started (check display)."
+echo "3. Refreshing e-ink display..."
+sudo systemctl enable --now eink-update.timer >/dev/null 2>&1 || true
+~/.virtualenvs/pimoroni/bin/python ~/deployment/eink/inky_push.py --force || echo "   E-ink refresh failed: journalctl -u eink-update -n 20"
+echo "   Timer: $(systemctl is-active eink-update.timer)"
 
 echo ""
 echo "=== Quick health check ==="
@@ -46,4 +38,4 @@ curl -s -o /dev/null -w "   Dashboard (80): %{http_code}\n" http://localhost/ ||
 # Bridge/LLM (5000) skipped when Ollama disabled
 # curl -s -o /dev/null -w "   Bridge/LLM (5000): %{http_code}\n" http://localhost:5000/weather 2>/dev/null || echo "   Bridge (5000): not running or failed"
 echo ""
-echo "Done. If display still shows 'no signal', try: sudo reboot"
+echo "Done. If the e-ink display is still stale, try: sudo reboot"

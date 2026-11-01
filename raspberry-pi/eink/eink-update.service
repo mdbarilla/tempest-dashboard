@@ -1,0 +1,12 @@
+[Unit]
+Description=Render the Tower Hill dashboard to the Inky Impression
+Wants=network-online.target
+After=network-online.target nginx.service pm2-mbarilla.service
+
+[Service]
+Type=oneshot
+User=mbarilla
+WorkingDirectory=/home/mbarilla/deployment/eink
+ExecStart=/home/mbarilla/.virtualenvs/pimoroni/bin/python /home/mbarilla/deployment/eink/inky_push.py
+TimeoutStartSec=3min
+Nice=5
