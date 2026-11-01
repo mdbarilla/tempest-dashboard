@@ -1,0 +1,333 @@
+/*
+ * E-ink page. The Spectra 6 panel has six inks (black, white, red, yellow, blue, green);
+ * every other colour is a dither of those. Keep tints dark so text dithers to mostly
+ * solid ink rather than visible speckle. Preview with raspberry-pi/eink/preview.sh.
+ */
+
+body.eink-body {
+  margin: 0;
+  background: #fff;
+  overflow: hidden;
+}
+
+.eink {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  --eink-text: #2b2b2e;
+  --eink-rule: #3a3a3e;
+  --eink-accent: #2f4468;
+  padding: 14px 20px 4px;
+  background: #fff;
+  color: var(--eink-text);
+  font-family: 'Public Sans', -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.eink *,
+.eink *::before,
+.eink *::after {
+  box-sizing: border-box;
+  animation: none !important;
+  transition: none !important;
+}
+
+.eink svg {
+  color: var(--eink-text);
+}
+
+.eink-sep {
+  font-weight: 300;
+}
+
+/* Header */
+
+.eink-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.eink-title {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.eink-city {
+  font-weight: 400;
+  margin-left: 6px;
+}
+
+.eink-updated {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Current conditions + hourly */
+
+.eink-top {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  padding: 6px 0 12px;
+  border-bottom: 1px solid var(--eink-rule);
+}
+
+.eink-now {
+  flex: 0 0 220px;
+}
+
+.eink-temp {
+  font-family: 'Fraunces', serif;
+  font-size: 84px;
+  font-weight: 500;
+  line-height: 0.9;
+  letter-spacing: -2px;
+}
+
+.eink-conditions {
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 6px;
+}
+
+.eink-hilo {
+  font-family: 'Fraunces', serif;
+  font-size: 24px;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.eink-feels {
+  font-size: 15px;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.eink-alert {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 8px;
+  background: #ff0000;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.eink-hourly-cols {
+  display: flex;
+}
+
+.eink-hourly-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.eink-hourly-time {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.eink-hourly-band {
+  position: relative;
+}
+
+.eink-hourly-line {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.eink-hourly-temp {
+  position: absolute;
+  text-align: center;
+  font-family: 'Fraunces', serif;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.eink-hourly-precip {
+  display: block;
+  font-family: 'Public Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--eink-accent);
+}
+
+/* Metric grid: 3 columns x 2 rows with black rules */
+
+.eink-metrics {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+}
+
+.eink-metric {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 20px 12px;
+  min-width: 0;
+}
+
+.eink-metric:nth-child(3n + 1) {
+  padding-left: 0;
+}
+
+/* Column rules are inset so they don't touch the row rule, matching the dashboard */
+.eink-metric:not(:nth-child(3n + 1))::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  border-left: 1px solid var(--eink-rule);
+}
+
+.eink-metric:nth-child(n + 4) {
+  border-top: 1px solid var(--eink-rule);
+}
+
+.eink-metric-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.eink-metric-value {
+  font-family: 'Fraunces', serif;
+  font-size: 34px;
+  font-weight: 500;
+  line-height: 1;
+  margin-top: 8px;
+  white-space: nowrap;
+}
+
+.eink-metric-unit {
+  font-size: 16px;
+  margin-left: 4px;
+}
+
+.eink-metric-secondary {
+  font-size: 15px;
+  font-weight: 500;
+  margin-top: 6px;
+  white-space: pre-line;
+  line-height: 1.25;
+}
+
+.eink-metric-trend {
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+/* Portrait adjustments */
+
+.eink--portrait .eink-top {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.eink--portrait .eink-now {
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  gap: 18px;
+}
+
+.eink--portrait .eink-temp {
+  font-size: 112px;
+}
+
+.eink--portrait .eink-metric {
+  padding: 12px 12px 10px;
+}
+
+.eink--portrait .eink-metric:nth-child(3n + 1) {
+  padding-left: 0;
+}
+
+.eink--portrait .eink-metric-label {
+  font-size: 14px;
+}
+
+.eink--portrait .eink-metric-value {
+  font-size: 34px;
+}
+
+.eink--portrait .eink-metric-unit {
+  font-size: 15px;
+}
+
+.eink--portrait .eink-metric-secondary {
+  font-size: 13px;
+}
+
+.eink--portrait .eink-metrics {
+  flex: none;
+  height: 270px;
+  border-bottom: 1px solid var(--eink-rule);
+}
+
+/* Daily forecast (portrait only) */
+
+.eink-forecast {
+  flex: 1;
+  padding-top: 6px;
+}
+
+.eink-daily-row {
+  display: grid;
+  grid-template-columns: 64px 32px 1fr auto;
+  align-items: center;
+  height: 36px;
+}
+
+.eink-daily-name {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.eink-daily-condition {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.eink-daily-precip {
+  color: var(--eink-accent);
+  font-weight: 700;
+}
+
+.eink-daily-temps {
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  font-weight: 500;
+}
+
+/* Error state */
+
+.eink--error {
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 40px;
+}
+
+.eink-error-title {
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.eink-error-message {
+  font-size: 20px;
+  text-align: center;
+}

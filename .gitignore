@@ -49,3 +49,7 @@ temp/
 # Raspberry Pi specific
 *.img
 *.img.gz
+
+# E-ink preview tooling
+raspberry-pi/eink/.venv/
+raspberry-pi/eink/preview/
