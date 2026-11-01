@@ -82,7 +82,7 @@ const server = app.listen(PORT, '127.0.0.1', () => {
 // Start data collector (saves observations every minute)
 const collector = new DataCollector(1, {
   maxConsecutiveErrors: 10,
-  retentionDays: 7,
+  retentionDays: 365,
   cleanupIntervalHours: 24
 });
 collector.start();

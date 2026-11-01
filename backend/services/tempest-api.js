@@ -36,7 +36,7 @@ class TempestAPI {
    * Convert one Tempest device obs_st array to a row matching our DB/bucket shape (same fields as observations table).
    * Device API uses metric: temp C, wind m/s, precip mm. We output F/C, mph, pressure mb, precip in inches for charts.
    */
-  deviceObsArrayToRow(arr) {
+  deviceObsArrayToRow(arr, elevationM = null) {
     if (!Array.isArray(arr) || arr.length < 19) return null;
     const ts = Number(arr[0]);
     if (!Number.isFinite(ts)) return null;
@@ -54,11 +54,43 @@ class TempestAPI {
       wind_speed: windAvg,
       wind_gust: windGust,
       wind_direction: arr[4] != null ? Number(arr[4]) : null,
-      pressure_mb: arr[6] != null ? Number(arr[6]) : null,
+      pressure_mb: arr[6] != null ? this.toSeaLevelPressure(Number(arr[6]), elevationM) : null,
       uv_index: arr[10] != null ? Number(arr[10]) : null,
       solar_radiation: arr[11] != null ? Number(arr[11]) : null,
       precip_today: precipIn
     };
+  }
+
+  /**
+   * Device obs report station pressure; observations saved from current conditions are sea-level.
+   * Uses the same reduction WeatherFlow applies (standard atmosphere, station elevation + sensor height).
+   */
+  toSeaLevelPressure(stationMb, elevationM) {
+    if (!Number.isFinite(stationMb) || !Number.isFinite(elevationM)) return stationMb;
+    const P0 = 1013.25, Rd = 287.05, GAMMA = 0.0065, G = 9.80665, T0 = 288.15;
+    const k = (Rd * GAMMA) / G;
+    const slp = stationMb * Math.pow(1 + Math.pow(P0 / stationMb, k) * (GAMMA * elevationM / T0), 1 / k);
+    return Math.round(slp * 10) / 10;
+  }
+
+  /**
+   * Height of the outdoor sensor above sea level (station elevation + device AGL), fetched once from station metadata.
+   */
+  async getSensorElevationM() {
+    if (this.sensorElevationM !== undefined) return this.sensorElevationM;
+    try {
+      const url = `${this.baseUrl}/stations/${this.stationId}?token=${this.apiToken}`;
+      const response = await axios.get(url, { timeout: 10000 });
+      const station = response.data?.stations?.[0];
+      const elevation = Number(station?.station_meta?.elevation);
+      const device = station?.devices?.find((d) => String(d.device_id) === String(this.deviceId));
+      const agl = Number(device?.device_meta?.agl) || 0;
+      this.sensorElevationM = Number.isFinite(elevation) ? elevation + agl : null;
+    } catch (err) {
+      console.warn('[TempestAPI] Station elevation lookup failed; device pressure left as station pressure:', err.message);
+      return null;
+    }
+    return this.sensorElevationM;
   }
 
   /**
@@ -81,6 +113,7 @@ class TempestAPI {
       }
     }
 
+    const elevationM = await this.getSensorElevationM();
     const cacheKeyBase = `device_obs_${id}_`;
     const allRows = [];
     for (const [start, end] of ranges) {
@@ -100,7 +133,7 @@ class TempestAPI {
           continue;
         }
         const rows = obs
-          .map((arr) => (type === 'obs_st' ? this.deviceObsArrayToRow(arr) : null))
+          .map((arr) => (type === 'obs_st' ? this.deviceObsArrayToRow(arr, elevationM) : null))
           .filter(Boolean);
         cache.set(cacheKey, rows, CACHE_TTL_DEVICE_OBS);
         allRows.push(...rows);

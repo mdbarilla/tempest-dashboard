@@ -181,7 +181,7 @@ sqlite3 data/weather.db "SELECT COUNT(*), datetime(MAX(timestamp), 'unixepoch') 
 - Collector auto-stops after 10 consecutive errors - restart server
 
 ### Database Growing Too Large
-- Default retention is 7 days
+- `DataCollector` defaults to 7 days; server.js sets 365 so the History page keeps logged conditions for a year
 - Adjust `retentionDays` in server.js if needed
 - Manual cleanup: Delete observations older than N days
 

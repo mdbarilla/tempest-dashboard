@@ -460,6 +460,43 @@ router.get('/hourly/:date', async (req, res) => {
       if (obs.wind_direction != null) b.wind_direction = obs.wind_direction;
     }
 
+    // Fill past hours the Pi has no observations for (offline or beyond retention) from WeatherFlow device history
+    const pastEndUnix = Math.min(endUnix, nowUnix);
+    let hasPastGap = false;
+    for (let t = startUnix; t <= pastEndUnix; t += 3600) {
+      if (!byHour.has(t)) { hasPastGap = true; break; }
+    }
+    if (hasPastGap && tempestAPI.deviceId && startUnix < nowUnix) {
+      try {
+        const deviceRows = await tempestAPI.getDeviceObservations(tempestAPI.deviceId, startUnix, pastEndUnix);
+        const stationByHour = new Map();
+        for (const obs of deviceRows) {
+          const hourKey = Math.floor(Number(obs.timestamp) / 3600) * 3600;
+          if (byHour.has(hourKey)) continue;
+          if (!stationByHour.has(hourKey)) {
+            stationByHour.set(hourKey, {
+              count: 0, temp_f: 0, feels_f: 0, humidity: 0, wind: 0, wind_gust_max: null,
+              pressure: 0, precip: null, solar: 0, uv: 0, conditions: null, wind_direction: null, source: 'tempest'
+            });
+          }
+          const b = stationByHour.get(hourKey);
+          b.count++;
+          if (obs.temp_fahrenheit != null) { b.temp_f += obs.temp_fahrenheit; b.feels_f += obs.temp_fahrenheit; }
+          if (obs.humidity != null) b.humidity += obs.humidity;
+          if (obs.wind_speed != null) b.wind += obs.wind_speed;
+          if (obs.wind_gust != null) b.wind_gust_max = Math.max(b.wind_gust_max ?? 0, obs.wind_gust);
+          if (obs.pressure_mb != null) b.pressure += obs.pressure_mb;
+          if (obs.precip_today != null) b.precip = Math.max(b.precip ?? 0, obs.precip_today);
+          if (obs.solar_radiation != null) b.solar += obs.solar_radiation;
+          if (obs.uv_index != null) b.uv = Math.max(b.uv, obs.uv_index);
+          if (obs.wind_direction != null) b.wind_direction = obs.wind_direction;
+        }
+        for (const [hourKey, bucket] of stationByHour) byHour.set(hourKey, bucket);
+      } catch (err) {
+        console.warn('[hourly] Device observations fallback failed:', err.message);
+      }
+    }
+
     const toRow = (hourKey, bucket) => {
       const tempF = bucket.count ? Math.round(bucket.temp_f / bucket.count) : null;
       const feelsF = bucket.count ? Math.round(bucket.feels_f / bucket.count) : tempF;
@@ -483,7 +520,8 @@ router.get('/hourly/:date', async (req, res) => {
         humidity,
         windSpeed,
         windDirection: windDir,
-        pressureInHg
+        pressureInHg,
+        ...(bucket.source ? { source: bucket.source } : {})
       };
     };
 
@@ -891,7 +929,32 @@ router.get('/recent', async (req, res) => {
         }
       }
     } else {
-      data = await db.getObservationsByTimestampRange(cutoffTime, nowUnix, 1000);
+      // 26h at 1 obs/min is ~1560 rows; the query keeps the most recent rows, so a lower limit truncates the start of the window
+      data = await db.getObservationsByTimestampRange(cutoffTime, nowUnix, 2000);
+
+      // Fill stretches with no Pi observation (offline, restart, beyond retention) from WeatherFlow device obs
+      const GAP_TOLERANCE_SEC = 150;
+      const localTs = data.map(d => Number(d.timestamp));
+      const hasLocalNear = (ts) => {
+        let lo = 0, hi = localTs.length - 1;
+        while (lo <= hi) {
+          const mid = (lo + hi) >> 1;
+          const diff = localTs[mid] - ts;
+          if (Math.abs(diff) <= GAP_TOLERANCE_SEC) return true;
+          if (diff < 0) lo = mid + 1; else hi = mid - 1;
+        }
+        return false;
+      };
+      const coverageNeeded = Math.floor((nowUnix - requestedCutoff) / 60);
+      if (tempestAPI.deviceId && localTs.length < coverageNeeded * 0.95) {
+        try {
+          const deviceRows = await tempestAPI.getDeviceObservations(tempestAPI.deviceId, requestedCutoff, nowUnix);
+          const fill = deviceRows.filter(r => !hasLocalNear(Number(r.timestamp)));
+          if (fill.length > 0) data = data.concat(fill);
+        } catch (err) {
+          console.warn('[recent 24h] Device observations fallback failed:', err.message);
+        }
+      }
     }
 
     // Filter to requested hours (24h only; 3d/7d already built to exact span)
